@@ -1,0 +1,3981 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>征途·戍行录</title>
+<style>
+/* ══════════════════════════════════════════════
+   全局基础
+══════════════════════════════════════════════ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --c-bg:#080612;
+  --c-text:#f0e6c8;
+  --c-torch:#ff8c00;
+  --c-torch2:#ffcc44;
+  --c-river:#0a1828;
+  --c-snow:#d8e8f0;
+  --c-red:#cc2222;
+  --c-gold:#d4a843;
+  --font-pixel:'Courier New',monospace;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--c-bg);
+  font-family:var(--font-pixel);cursor:none;color:var(--c-text)}
+
+/* 自定义光标 */
+#cursor{position:fixed;width:8px;height:8px;border:1.5px solid rgba(255,200,80,.8);
+  border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);
+  mix-blend-mode:screen;transition:width .15s,height .15s}
+
+/* 噪点层 */
+#noise{position:fixed;inset:0;z-index:9990;pointer-events:none;opacity:.028;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:120px 120px}
+
+/* 全局转场遮罩 */
+#global-mask{position:fixed;inset:0;z-index:8000;pointer-events:none;
+  background:#080612;opacity:0;transition:opacity .6s ease}
+
+/* ══════════════════════════════════════════════
+   开头：梦境层
+══════════════════════════════════════════════ */
+#intro{position:fixed;inset:0;z-index:500;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;background:#080612;
+  transition:opacity 1.5s ease}
+#intro-fog{position:absolute;inset:0;overflow:hidden}
+.fog-layer{position:absolute;inset:-20%;width:140%;height:140%;
+  border-radius:50%;opacity:.18;animation:fogDrift 12s ease-in-out infinite}
+.fog-layer:nth-child(1){background:radial-gradient(ellipse,#2a1840 0%,transparent 70%);
+  animation-duration:14s;animation-delay:0s}
+.fog-layer:nth-child(2){background:radial-gradient(ellipse,#1a2840 0%,transparent 65%);
+  animation-duration:18s;animation-delay:-5s;left:-10%}
+.fog-layer:nth-child(3){background:radial-gradient(ellipse,#101830 0%,transparent 60%);
+  animation-duration:22s;animation-delay:-9s;top:-10%}
+@keyframes fogDrift{
+  0%,100%{transform:translate(0,0) scale(1)}
+  33%{transform:translate(3%,2%) scale(1.04)}
+  66%{transform:translate(-2%,3%) scale(.97)}
+}
+#intro-stars{position:absolute;inset:0;pointer-events:none}
+#intro-text{position:relative;z-index:2;text-align:center;
+  font-size:clamp(14px,1.8vw,20px);letter-spacing:.35em;line-height:2.8;
+  color:rgba(240,230,200,.75);text-shadow:0 0 30px rgba(200,180,255,.3)}
+#intro-text .line{opacity:0;transform:translateY(10px);
+  transition:opacity 1.2s ease,transform 1.2s ease}
+#intro-text .line.show{opacity:1;transform:translateY(0)}
+#intro-enter{margin-top:40px;position:relative;z-index:2;
+  font-size:15px;letter-spacing:.45em;color:rgba(240,230,200,.4);
+  animation:pulse 2.2s ease-in-out infinite;cursor:pointer}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.85;transform:scale(1.06)}}
+
+/* ══════════════════════════════════════════════
+   游戏A容器
+══════════════════════════════════════════════ */
+#game-a-wrap{position:fixed;inset:0;z-index:600;background:#080612;
+  display:none} /* 不用flex-column，iframe直接全屏 */
+#game-a-header{
+  position:absolute;top:0;left:0;right:0;
+  height:38px;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;
+  background:linear-gradient(to bottom,rgba(5,6,10,.85) 0%,rgba(5,6,10,0) 100%);
+  pointer-events:none; /* 让鼠标事件穿透到游戏 */
+}
+#game-a-header *{pointer-events:auto;} /* 按钮仍然可点 */
+#game-a-header span{font-size:10px;letter-spacing:.35em;opacity:.35}
+#game-a-skip{font-size:10px;letter-spacing:.25em;color:rgba(240,230,200,.4);
+  cursor:pointer;border:1px solid rgba(240,230,200,.2);padding:4px 14px;
+  border-radius:2px;transition:all .3s;background:none}
+#game-a-skip:hover{color:rgba(240,230,200,.8);border-color:rgba(240,230,200,.5)}
+#game-a-menu{font-size:10px;letter-spacing:.25em;color:rgba(240,230,200,.3);
+  cursor:pointer;border:1px solid rgba(240,230,200,.15);padding:4px 14px;
+  border-radius:2px;transition:all .3s;background:none}
+#game-a-menu:hover{color:rgba(240,230,200,.7);border-color:rgba(240,230,200,.45)}
+#game-a-iframe{
+  position:absolute;inset:0;
+  border:none;width:100%;height:100%;
+  background:#080612;
+}
+
+/* ══════════════════════════════════════════════
+   正片容器
+══════════════════════════════════════════════ */
+#main{position:fixed;inset:0;z-index:100;display:none}
+
+/* 每一幕：全屏固定，默认隐藏 */
+.scene{position:absolute;inset:0;overflow:hidden;opacity:0;
+  pointer-events:none;transition:opacity .3s}
+.scene.active{opacity:1;pointer-events:auto}
+
+/* 视差图层 */
+.p-layer{position:absolute;inset:0;will-change:transform}
+
+#act-label{position:fixed;top:28px;left:50%;transform:translateX(-50%);
+  font-size:clamp(14px,1.6vw,17px);letter-spacing:.4em;color:rgba(240,230,200,.55);
+  z-index:300;pointer-events:none;transition:opacity .8s}
+
+/* ══════════════════════════════════════════════
+   旁白字幕系统：屏幕底部半透明黑底渐变条
+══════════════════════════════════════════════ */
+#subtitle-wrap{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  z-index:300;pointer-events:none;
+  background:linear-gradient(to top,
+    rgba(0,0,0,.80) 0%,
+    rgba(0,0,0,.62) 45%,
+    rgba(0,0,0,0)   100%);
+  padding:42px 40px 28px;
+  min-height:115px;
+  transition:opacity .5s ease;
+}
+/* 每行旁白 */
+.sub-line{
+  display:block;
+  font-size:clamp(17px,2.2vw,22px);
+  color:var(--c-text);
+  letter-spacing:.14em;
+  line-height:2;
+  text-align:center;
+  opacity:0;
+  transition:opacity .8s ease;
+  margin-bottom:2px;
+}
+.sub-line.visible{opacity:1}
+/* 旁白：米白居中 */
+.sub-line.narrate{color:#e8dfc0;text-align:center}
+/* 主角对话（出现在对话框里，不走字幕条） */
+.sub-line.player{color:#a8d4f0;text-align:left}
+/* NPC对话（出现在对话框里，不走字幕条） */
+.sub-line.npc{color:#f0d880;text-align:left}
+/* 角色名标签 */
+.sub-speaker{font-size:.82em;opacity:.65;margin-right:.4em;
+  letter-spacing:.05em;font-style:normal}
+
+/* ── 主角对话框（横条形，字幕条上方，主角有台词时渐显） ── */
+#player-dialog{
+  position:fixed;
+  bottom:125px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:302;
+  background:rgba(0,0,0,.72);
+  border:1px solid rgba(120,180,240,.28);
+  border-radius:4px;
+  padding:12px 32px;
+  font-size:clamp(17px,1.9vw,20px);
+  letter-spacing:.18em;
+  line-height:1.9;
+  color:#a8d4f0;
+  text-align:center;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .5s ease;
+  max-width:70vw;
+  white-space:normal;
+}
+#player-dialog.show{opacity:1}
+
+/* ── 提示系统 ── */
+#hint-wrap{position:fixed;bottom:125px;left:50%;transform:translateX(-50%);
+  z-index:301;pointer-events:none;display:flex;flex-direction:column;
+  align-items:center;gap:5px;transition:opacity .8s;
+  background:rgba(0,0,0,.38);padding:6px 18px 8px;border-radius:4px;}
+#hint-text{font-size:16px;letter-spacing:.22em;color:rgba(255,245,210,.95);
+  text-shadow:0 1px 4px rgba(0,0,0,.8)}
+#hint-icon{width:20px;height:20px;border-right:2px solid rgba(240,230,200,.6);
+  border-bottom:2px solid rgba(240,230,200,.6);transform:rotate(45deg);
+  animation:hintBounce 1.5s infinite ease-in-out}
+@keyframes hintBounce{0%,100%{transform:rotate(45deg) translateY(0)}
+  50%{transform:rotate(45deg) translateY(4px)}}
+/* 横向滑动提示：双箭头左右抖动 */
+#hint-icon.swipe-hint{
+  width:28px;height:12px;
+  border:none;
+  border-left:2px solid rgba(240,230,200,.6);
+  border-right:2px solid rgba(240,230,200,.6);
+  transform:none;
+  animation:hintSwipe 1.2s infinite ease-in-out;
+}
+@keyframes hintSwipe{
+  0%,100%{transform:translateX(0)}
+  50%{transform:translateX(5px)}
+}
+
+/* ── 进度条（开发调试用，上线可删） ── */
+#progress-bar{position:fixed;top:0;left:0;height:1.5px;
+  background:linear-gradient(90deg,var(--c-torch),var(--c-torch2));
+  z-index:9000;transition:width .12s linear;opacity:.4;pointer-events:none}
+
+/* ══════════════════════════════════════════════
+   转场遮罩（每幕专用）
+══════════════════════════════════════════════ */
+#scene-mask{position:fixed;inset:0;z-index:700;pointer-events:none;
+  opacity:0;transition:opacity .3s}
+
+/* ══════════════════════════════════════════════
+   第一幕专属
+══════════════════════════════════════════════ */
+
+/* PNG图层通用：铺满容器，底部对齐，透明PNG直接叠加 */
+.s1-img,.s2-img,.s3-img{
+  position:absolute;
+  left:0;bottom:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center bottom;
+  pointer-events:none;
+}
+
+/* 芦苇摇晃动画 */
+@keyframes reedsWave{
+  0%  {transform:rotate(0deg) translateX(0)}
+  25% {transform:rotate(.6deg) translateX(2px)}
+  75% {transform:rotate(-.5deg) translateX(-2px)}
+  100%{transform:rotate(0deg) translateX(0)}
+}
+#s1-reeds{
+  transform-origin:bottom center;
+  animation:reedsWave 4s ease-in-out infinite;
+}
+
+/* 村庄灯光呼吸闪烁 */
+@keyframes villageGlow{
+  0%,100%{filter:brightness(1) drop-shadow(0 0 0px rgba(255,180,60,0))}
+  50%    {filter:brightness(1.08) drop-shadow(0 0 8px rgba(255,180,60,.18))}
+}
+#s1-village{
+  animation:villageGlow 3.5s ease-in-out infinite;
+}
+
+/* 月亮光晕呼吸 */
+@keyframes moonGlow{
+  0%,100%{filter:brightness(1) drop-shadow(0 0 12px rgba(255,240,180,.3))}
+  50%    {filter:brightness(1.06) drop-shadow(0 0 28px rgba(255,240,180,.55))}
+}
+#s1-sky{
+  animation:moonGlow 5s ease-in-out infinite;
+}
+
+/* 芦苇摇晃动画 */
+@keyframes reedSway{
+  0%,100%{transform:rotate(0deg) translateX(0);}
+  25%{transform:rotate(.8deg) translateX(3px);}
+  75%{transform:rotate(-.6deg) translateX(-2px);}
+}
+#s1-reeds{
+  transform-origin:bottom center;
+  animation:reedSway 4.5s ease-in-out infinite;
+}
+
+/* 动效Canvas层（月亮倒影荡漾+光晕粒子） */
+#s1-fx-canvas{
+  position:absolute;
+  inset:0;
+  z-index:9;
+  pointer-events:none;
+  width:100%;height:100%;
+}
+
+/* 云朵层 */
+#s1-clouds{
+  position:absolute;
+  inset:0;
+  z-index:2;
+  pointer-events:none;
+  overflow:hidden;
+}
+.s1-cloud{
+  position:absolute;
+  border-radius:50%;
+  filter:blur(18px);
+  opacity:.07;
+  animation:cloudDrift linear infinite;
+}
+@keyframes cloudDrift{
+  from{transform:translateX(-200px);}
+  to{transform:translateX(calc(100vw + 200px));}
+}
+
+/* 大娘剪影——屏幕正中央，占画面约85%高度 */
+#s1-grandma-wrap{
+  position:fixed;
+  top:50%; left:50%;
+  transform:translate(-50%,-52%);
+  width:min(900px,75vw);
+  z-index:20;
+  opacity:0;pointer-events:none;
+  transition:opacity 1.2s ease;
+  display:flex;flex-direction:column;align-items:center;
+}
+#s1-grandma-wrap.show{opacity:1}
+#s1-grandma-svg{
+  width:100%;height:auto;display:block;
+}
+
+/* 大娘对话框：出现在剪影左侧，不遮挡底部字幕条 */
+#s1-grandma-dialog{
+  position:fixed;
+  /* 水平：剪影左侧；垂直：屏幕中央偏下一点 */
+  left:calc(50% - min(140px,16vw) - 260px);
+  top:55%;
+  transform:translateY(-50%);
+  background:rgba(8,5,2,.88);
+  border:1px solid rgba(255,175,70,.35);
+  border-radius:4px 4px 4px 0;
+  padding:16px 20px 20px;
+  font-size:17px;
+  letter-spacing:.14em;
+  line-height:1.9;
+  width:280px;
+  z-index:350;
+  opacity:0;pointer-events:none;
+  transition:opacity .6s ease;
+}
+/* 右侧小三角（指向剪影） */
+#s1-grandma-dialog::after{
+  content:'';position:absolute;
+  right:-8px;top:18px;
+  border-top:7px solid transparent;
+  border-bottom:7px solid transparent;
+  border-left:8px solid rgba(255,175,70,.35);
+}
+#s1-grandma-dialog.show{opacity:1}
+#s1-grandma-dialog .spk{color:#f0d880;font-size:15px;opacity:.7;
+  display:block;margin-bottom:4px}
+#s1-grandma-dialog .txt{color:#f0d898}
+
+/* 鸡蛋交接场景 */
+/* ══ 鸡蛋交接场景 ══ */
+#egg-scene{
+  position:fixed;inset:0;z-index:400;pointer-events:none;
+  opacity:0;transition:opacity .8s ease;
+  background:#080612;
+}
+#egg-scene.active{opacity:1}
+
+/* 大娘全身：全屏铺满 */
+#egg-grandma-img{
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center center;
+  opacity:0;transition:opacity .8s ease;
+}
+#egg-grandma-img.show{opacity:1}
+
+/* 主角的手：全屏铺满，从下方升起 */
+#egg-player-hand{
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center center;
+  opacity:0;
+  transform:translateY(5vh);
+  transition:opacity .7s ease, transform 1s cubic-bezier(.25,.46,.45,.94);
+}
+#egg-player-hand.show{
+  opacity:1;
+  transform:translateY(0);
+}
+
+/* 大娘的手：全屏铺满，从上方降下，z-index高于主角手 */
+#egg-grandma-hand{
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center center;
+  opacity:0;
+  transform:translateY(-5vh);
+  transition:opacity .7s ease, transform 1.1s cubic-bezier(.25,.46,.45,.94);
+  z-index:3;
+}
+#egg-grandma-hand.show{
+  opacity:1;
+  transform:translateY(0);
+}
+/* 大娘手完全盖住主角手 */
+#egg-grandma-hand.cover{transform:translateY(2vh)}
+/* 大娘手挪开退场 */
+#egg-grandma-hand.retract{
+  transform:translateY(-15vh);
+  opacity:0;
+  transition:opacity .9s ease, transform 1.2s cubic-bezier(.55,.06,.68,.19);
+}
+
+/* 鸡蛋：全屏，和主角手同一张图，大娘手挪开后淡入
+   注意：这张图包含主角的手+鸡蛋，z-index高于主角空手 */
+#egg-item{
+  position:absolute;
+  top:0;left:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center center;
+  opacity:0;
+  transition:opacity 1s ease;
+  z-index:2;
+}
+#egg-item.show{opacity:1}
+
+/* 上一幕按钮（左上角） */
+#prev-act-btn{
+  position:fixed;top:22px;left:20px;z-index:500;
+  font-size:14px;letter-spacing:.25em;color:rgba(240,230,200,.35);
+  background:none;border:1px solid rgba(240,230,200,.15);
+  padding:7px 16px;border-radius:2px;cursor:pointer;
+  transition:all .3s;font-family:var(--font-pixel);
+  opacity:0;pointer-events:none;
+}
+#prev-act-btn.show{opacity:1;pointer-events:auto}
+#prev-act-btn:hover{color:rgba(240,230,200,.75);border-color:rgba(240,230,200,.4)}
+
+/* 下一幕按钮（上一幕按钮右边） */
+#next-act-btn{
+  position:fixed;top:22px;left:148px;z-index:500;
+  font-size:14px;letter-spacing:.25em;color:rgba(240,230,200,.35);
+  background:none;border:1px solid rgba(240,230,200,.15);
+  padding:7px 16px;border-radius:2px;cursor:pointer;
+  transition:all .3s;font-family:var(--font-pixel);
+  opacity:0;pointer-events:none;
+}
+#next-act-btn.show{opacity:1;pointer-events:auto}
+#next-act-btn:hover{color:rgba(240,230,200,.75);border-color:rgba(240,230,200,.4)}
+
+/* 返回主页按钮（右上角） */
+#skip-dialog-btn{
+  position:fixed;top:22px;right:20px;z-index:500;
+  font-size:14px;letter-spacing:.25em;color:rgba(240,230,200,.3);
+  background:none;border:1px solid rgba(240,230,200,.12);
+  padding:7px 18px;border-radius:2px;cursor:pointer;
+  transition:all .3s;font-family:var(--font-pixel);
+  opacity:0;pointer-events:none;
+}
+#skip-dialog-btn.show{opacity:1;pointer-events:auto}
+#skip-dialog-btn:hover{color:rgba(240,230,200,.65);border-color:rgba(240,230,200,.35)}
+
+/* ══════════════════════════════════════════════
+   第二幕专属：识字课本
+══════════════════════════════════════════════ */
+/* 识字课本：政委右侧 */
+#act2-book{
+  position:fixed;
+  top:50%;
+  left:62%;   /* 政委在35%，课本在右侧62% */
+  transform:translate(-50%,-50%);
+  z-index:350;opacity:0;transition:opacity .9s;pointer-events:none;
+}
+#act2-book.show{opacity:1}
+#act2-book img{
+  height:40vh;width:auto;display:block;
+}
+/* 泥地写字画布 */
+#act2-mud-canvas{position:fixed;bottom:0;left:0;width:100%;height:35%;
+  z-index:340;pointer-events:none;opacity:0;transition:opacity .8s}
+#act2-mud-canvas.show{opacity:1}
+
+/* ══════════════════════════════════════════════
+   第三幕专属：静夜思课本（PNG素材）
+══════════════════════════════════════════════ */
+#act3-book{
+  position:fixed;
+  right:12vw;
+  bottom:10%;
+  z-index:350;
+  opacity:0;
+  transition:opacity .9s ease, transform .9s ease;
+  pointer-events:none;
+  transform:translateX(30px);
+}
+#act3-book.show{opacity:1;transform:translateX(0)}
+#act3-book img{
+  height:54vh;
+  width:auto;
+  display:block;
+}
+/* 泪滴Canvas */
+#act3-tear-canvas{position:fixed;right:6vw;top:50%;
+  z-index:351;pointer-events:none;opacity:0;transition:opacity .5s}
+#act3-tear-canvas.show{opacity:1}
+
+/* ══════════════════════════════════════════════
+   第三幕专属：老兵（PNG素材，左侧偏下）
+══════════════════════════════════════════════ */
+#act3-oldman-wrap{
+  position:fixed;
+  left:12vw;
+  bottom:6%;
+  transform:none;
+  z-index:350;
+  pointer-events:none;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  opacity:0;
+  transition:opacity 1.2s ease;
+}
+#act3-oldman-wrap.show{opacity:1}
+#act3-oldman-wrap img{
+  height:68vh;
+  width:auto;
+  display:block;
+}
+
+/* ── 通用：人物剪影定位辅助（对话框上方） ── */
+.char-wrap{
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-55%);
+  z-index:350;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;
+  opacity:0;
+  transition:opacity 1.2s ease;
+}
+.char-wrap.show{opacity:1}
+
+/* 第二幕：政委居中偏左，课本在其右侧 */
+#act2-commissar-wrap{
+  left:42%;
+  transform:translate(-50%,-55%);
+}
+/* 政委对话框：人物左侧，不遮挡政委 */
+#act2-commissar-dialog{
+  left:calc(42% - 360px);
+  top:42%;
+  transform:none;
+}
+/* 通用对话框：固定在剪影左侧中间位置，不遮字幕条 */
+.char-dialog{
+  position:fixed;
+  left:calc(50% - min(80px,10vw) - 240px);
+  top:50%;
+  transform:translateY(-50%);
+  background:rgba(8,5,2,.92);
+  border:1px solid rgba(255,175,70,.32);
+  border-radius:4px 4px 4px 0;
+  padding:18px 22px 22px;
+  font-size:19px;
+  letter-spacing:.14em;
+  line-height:2;
+  width:300px !important;
+  word-break:normal;
+  word-wrap:break-word;
+  white-space:normal;
+  z-index:355;
+  opacity:0;
+  transition:opacity .5s ease;
+}
+.char-dialog.show{opacity:1}
+/* 右侧小三角 */
+.char-dialog::after{
+  content:'';position:absolute;
+  right:-8px;top:16px;
+  border-top:7px solid transparent;
+  border-bottom:7px solid transparent;
+  border-left:8px solid rgba(255,175,70,.32);
+}
+/* 第三幕老兵对话框：画面中央偏左 */
+#act3-oldman-dialog{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  top:auto;
+  bottom:28%;
+  border-radius:4px;
+}
+#act3-oldman-dialog::after{
+  display:none;
+}
+.char-dialog .dlg-speaker{font-size:15px;opacity:.65;margin-right:.4em;display:block;margin-bottom:4px;}
+.char-dialog .dlg-npc{color:#f0d880;font-size:19px;display:block;}
+.char-dialog .dlg-player{color:#a8d4f0;font-size:19px;display:block;}
+
+/* 第四幕：李狗蛋遗物（PNG，左侧底部，长按后渐显） */
+#act4-relic{
+  position:fixed !important;
+  left:-10vh;bottom:0;
+  z-index:290 !important;
+  opacity:0;
+  transition:opacity 1.4s ease;
+  pointer-events:none;
+}
+#act4-relic.show{opacity:1 !important}
+/* 主角的手：从左下角伸出 */
+#act4-player-hand{position:fixed;left:-120px;bottom:80px;z-index:360;
+  opacity:0;pointer-events:none;
+  transition:opacity .6s,left 1.2s cubic-bezier(.25,.46,.45,.94)}
+#act4-player-hand.enter{opacity:1;left:calc(50% - 200px)}
+#act4-player-hand.retract{left:-120px}
+@keyframes handTremble{
+  0%,100%{transform:rotate(0deg)}
+  20%{transform:rotate(-4deg) translate(-2px,1px)}
+  40%{transform:rotate(3deg) translate(2px,-1px)}
+  60%{transform:rotate(-3deg) translate(-1px,2px)}
+  80%{transform:rotate(2deg) translate(1px,-2px)}
+}
+#act4-player-hand.tremble{animation:handTremble .35s ease 3}
+
+/* ══ 第五幕：飞夺泸定桥 ══ */
+#act5-flash-canvas{position:fixed;inset:0;z-index:360;pointer-events:none;opacity:0}
+#act5-shout{position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);
+  z-index:370;font-size:clamp(28px,5vw,55px);letter-spacing:.3em;
+  color:rgba(255,220,180,.9);text-shadow:0 0 40px rgba(255,150,50,.7);
+  opacity:0;transition:opacity .3s;pointer-events:none;font-weight:bold}
+#act5-shout.show{opacity:1}
+/* 蒙太奇闪回 */
+#act5-flashback{position:fixed;inset:0;z-index:390;display:flex;
+  align-items:center;justify-content:center;
+  background:rgba(255,255,255,0);opacity:0;pointer-events:none;
+  transition:opacity .12s}
+#act5-flashback.show{opacity:1;background:rgba(255,255,255,.06)}
+/* 桥晃动：perspective倾斜，模拟中段摆动，两端视觉相对稳定 */
+@keyframes bridgeSwing{
+  0%  {transform:perspective(1200px) rotateX(0deg)   skewX(0deg)}
+  25% {transform:perspective(1200px) rotateX(.6deg)  skewX(.4deg)}
+  50% {transform:perspective(1200px) rotateX(0deg)   skewX(0deg)}
+  75% {transform:perspective(1200px) rotateX(-.5deg) skewX(-.3deg)}
+  100%{transform:perspective(1200px) rotateX(0deg)   skewX(0deg)}
+}
+#s5-bridge-img{
+  transform-origin:center top;
+  animation:bridgeSwing 3.2s ease-in-out infinite;
+}
+/* 第一视角覆盖层 */
+#act5-pov{
+  position:fixed;inset:0;z-index:295;
+  opacity:0;pointer-events:none;
+  transition:opacity 1.2s ease;
+}
+#act5-pov.show{opacity:1}
+#act5-pov img{width:100%;height:100%;object-fit:cover;display:block;}
+/* 转黑遮罩 */
+#act5-fadeout{
+  position:fixed;inset:0;z-index:365;
+  background:#000;opacity:0;pointer-events:none;
+  transition:opacity 2.5s ease;
+}
+/* 黑幕上的最后一句字幕（居中） */
+#act5-final-line{
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  z-index:366;
+  color:rgba(240,230,200,.88);
+  font-size:clamp(14px,1.6vw,18px);
+  letter-spacing:.25em;
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 1.2s ease;
+  text-shadow:0 0 20px rgba(240,220,160,.3);
+}
+#act5-final-line.show{opacity:1}
+
+/* ══ 第六幕：夹金山 ══ */
+/* ══ 第六幕：夹金山 ══ */
+/* 通用场景图层 */
+.act6-scene{
+  position:fixed;inset:0;z-index:295;
+  opacity:0;pointer-events:none;
+  transition:opacity 1.2s ease;
+}
+.act6-scene.show{opacity:1}
+.act6-scene img{width:100%;height:100%;object-fit:cover;display:block;}
+/* 老兵对话框定位（在soldier图上方） */
+#act6-oldman-wrap{
+  position:fixed;bottom:28%;left:50%;transform:translateX(-50%);
+  z-index:350;pointer-events:none;
+  opacity:0;transition:opacity .8s;
+}
+#act6-oldman-wrap.show{opacity:1}
+
+
+
+/* 大娘儿子对话框（人物左侧，三角朝右） */
+#act7-son-dialog{
+  position:fixed;
+  left:calc(50% - 36vh - 260px);
+  bottom:50%;
+  transform:none;
+  width:260px;
+  box-sizing:border-box;
+  word-break:break-all;
+  word-wrap:break-word;
+  white-space:normal;
+  opacity:0;transition:opacity .5s ease;
+}
+#act7-son-dialog.show{opacity:1}
+#act7-son-dialog::after{
+  content:'';position:absolute;
+  right:-8px;top:16px;
+  border-top:7px solid transparent;
+  border-bottom:7px solid transparent;
+  border-left:8px solid rgba(255,175,70,.32);
+}
+/* 背景PNG */
+#act7-bg-img{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;z-index:1;pointer-events:none;
+}
+#act7-petal-canvas{position:fixed;inset:0;z-index:305;pointer-events:none}
+#act7-flag-canvas{position:fixed;inset:0;z-index:304;pointer-events:none}
+/* 画圈轨迹canvas */
+#act7-trail-canvas{position:fixed;inset:0;z-index:306;pointer-events:none}
+/* 回忆风暴闪回 */
+#act7-memory-storm{position:fixed;inset:0;z-index:380;opacity:0;
+  pointer-events:none;transition:opacity .2s;
+  display:flex;align-items:center;justify-content:center}
+#act7-memory-storm.show{opacity:1}
+/* 最终字幕定格 */
+#act7-final-text{position:fixed;inset:0;z-index:390;background:#080612;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;transition:opacity 1.5s ease;pointer-events:none}
+#act7-final-text.show{opacity:1;pointer-events:auto}
+#act7-final-text .final-line{
+  opacity:0;transform:translateY(12px);
+  transition:opacity 1.2s ease,transform 1.2s ease;
+  font-size:clamp(14px,1.8vw,20px);letter-spacing:.35em;line-height:2.8;
+  color:rgba(240,230,200,.85);text-align:center;
+  text-shadow:0 0 30px rgba(200,180,255,.3);
+}
+#act7-final-text .final-line.show{opacity:1;transform:translateY(0)}
+#act7-final-text .dedication{
+  font-size:clamp(10px,1.2vw,13px);color:rgba(240,230,200,.35);
+  letter-spacing:.25em;margin-top:28px;
+  opacity:0;transition:opacity 1.2s ease;
+}
+#act7-final-text .dedication.show{opacity:1}
+/* 老照片滤镜 */
+@keyframes sepia-in{from{filter:sepia(0)}to{filter:sepia(.45) brightness(.9)}}
+.photo-filter{animation:sepia-in 3s ease forwards}
+
+/* 屏幕震动（第五幕呐喊时） */
+@keyframes screenShake{
+  0%,100%{transform:translate(0,0)}
+  20%{transform:translate(-4px,2px)}
+  40%{transform:translate(4px,-3px)}
+  60%{transform:translate(-3px,4px)}
+  80%{transform:translate(3px,-2px)}
+}
+/* 重影效果 */
+#act5-afterimage{
+  position:fixed;inset:0;z-index:362;pointer-events:none;
+  opacity:0;transition:opacity .08s;
+  background:rgba(255,255,255,0.06);
+  mix-blend-mode:screen;
+}
+
+/* ══════════════════════════════════════════════
+   结尾容器
+══════════════════════════════════════════════ */
+#ending{position:fixed;inset:0;z-index:200;background:#080612;
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:32px}
+#ending-text{font-size:clamp(17px,2vw,22px);letter-spacing:.25em;line-height:2.4;
+  text-align:center;color:rgba(240,230,200,.75);opacity:0;transition:opacity 1.5s}
+#ending-text.show{opacity:1}
+#ending-btns{display:flex;gap:20px;opacity:0;transition:opacity 1.2s;flex-wrap:wrap;
+  justify-content:center}
+#ending-btns.show{opacity:1}
+.ending-btn{font-family:var(--font-pixel);font-size:16px;letter-spacing:.3em;
+  padding:12px 28px;border:1px solid rgba(240,230,200,.3);background:transparent;
+  color:rgba(240,230,200,.65);cursor:pointer;transition:all .3s;border-radius:2px}
+.ending-btn:hover{background:rgba(240,230,200,.08);color:rgba(240,230,200,.95);
+  border-color:rgba(240,230,200,.6)}
+.ending-btn.primary{border-color:rgba(212,168,67,.5);color:var(--c-gold)}
+.ending-btn.primary:hover{background:rgba(212,168,67,.1);border-color:var(--c-gold)}
+/* 游戏B */
+#game-b-wrap{position:fixed;inset:0;z-index:800;background:#080612;
+  display:none;flex-direction:column}
+#game-b-header{height:44px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;border-bottom:1px solid rgba(240,230,200,.08);flex-shrink:0}
+#game-b-close{font-size:10px;letter-spacing:.25em;color:rgba(240,230,200,.4);
+  cursor:pointer;border:1px solid rgba(240,230,200,.2);padding:4px 14px;
+  border-radius:2px;background:none;color:inherit;transition:all .3s}
+#game-b-close:hover{color:rgba(240,230,200,.8);border-color:rgba(240,230,200,.5)}
+#game-b-iframe{flex:1;border:none;width:100%;background:#080612}
+@keyframes rotatePulse{
+  0%,100%{transform:rotate(0deg);}
+  50%{transform:rotate(90deg);}
+}
+
+</style>
+</head>
+<body>
+
+<!-- 横屏提示（仅手机竖屏时显示） -->
+<div id="rotate-tip" style="display:none;position:fixed;inset:0;z-index:9500;
+  background:rgba(8,6,18,.96);flex-direction:column;
+  align-items:center;justify-content:center;gap:20px;">
+  <div style="font-size:48px;">📱</div>
+  <div style="font-size:15px;letter-spacing:.3em;color:rgba(240,230,200,.85);text-align:center;
+    font-family:var(--font-pixel);line-height:2.2;">
+    请旋转屏幕<br>横屏使用效果更佳
+  </div>
+</div>
+<!-- 光标 -->
+<div id="cursor"></div>
+<!-- 噪点 -->
+<div id="noise"></div>
+<!-- 全局遮罩 -->
+<div id="global-mask"></div>
+<!-- 场景切换遮罩 -->
+<div id="scene-mask"></div>
+<!-- 进度条 -->
+<div id="progress-bar" style="width:0"></div>
+
+<!-- ══════════════════════════════════════════════
+     开头：梦境
+══════════════════════════════════════════════ -->
+<div id="intro">
+  <div id="intro-fog">
+    <div class="fog-layer"></div>
+    <div class="fog-layer"></div>
+    <div class="fog-layer"></div>
+  </div>
+  <canvas id="intro-stars"></canvas>
+  <div id="intro-text">
+    <span class="line" id="iline0">多年后，</span>
+    <span class="line" id="iline1">我好像回到了那</span>
+    <span class="line" id="iline2">亮着星星灯火的</span>
+    <span class="line" id="iline3">漫漫长路上……</span>
+  </div>
+  <div id="intro-enter" onclick="enterMain()">▷ 踏上那条路</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     游戏A容器（第一个小游戏）
+══════════════════════════════════════════════ -->
+<div id="game-a-wrap">
+  <div id="game-a-header">
+    <span>序章 · 梦中的路</span>
+    <div style="display:flex;gap:12px;align-items:center">
+      <button id="game-a-menu" onclick="returnGameAMenu()">‹ 返回选关</button>
+      <button id="game-a-skip" onclick="skipGameA()">跳过，直接进入回忆 ›</button>
+    </div>
+  </div>
+  <!-- ↓↓↓ 将 game_a.html 替换为你们的游戏A文件路径 ↓↓↓ -->
+  <iframe id="game-a-iframe" src="game_a.html" allowfullscreen></iframe>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     正片
+══════════════════════════════════════════════ -->
+<div id="main">
+
+  <!-- 幕标签 -->
+  <div id="act-label"></div>
+
+  <!-- 字幕区 -->
+  <div id="subtitle-wrap"></div>
+
+  <!-- 主角对话框（横条形，字幕条上方，有台词时渐显） -->
+  <div id="player-dialog"></div>
+
+  <!-- 提示区 -->
+  <div id="hint-wrap">
+    <div id="hint-text"></div>
+    <div id="hint-icon"></div>
+  </div>
+
+  <!-- ══ 第一幕：夜渡于都河 ══ -->
+  <div class="scene" id="scene-1">
+
+    <!-- L1 天空+月亮（act1_sky.png，最底层，铺满，不需要screen） -->
+    <img id="s1-sky" class="p-layer s1-img"
+         src="act1_sky.png"
+         style="z-index:1;object-fit:cover;width:100%;height:100%;
+                object-position:center top"/>
+
+    <!-- L2 远山（act1_mountain.png，screen混合让黑色透明） -->
+    <img id="s1-mountain" class="p-layer s1-img"
+         src="act1_mountain.png"
+         style="z-index:2"/>
+
+    <!-- L3 村庄+树（act1_village.png） -->
+    <img id="s1-village" class="p-layer s1-img"
+         src="act1_village.png"
+         style="z-index:3"/>
+
+    <!-- L4 河面（act1_river.png） -->
+    <img id="s1-river" class="p-layer s1-img"
+         src="act1_river.png"
+         style="z-index:4"/>
+
+    <!-- L5 桥+近岸（act1_shore.png） -->
+    <img id="s1-shore" class="p-layer s1-img"
+         src="act1_shore.png"
+         style="z-index:5"/>
+
+    <!-- L6 芦苇（act1_reeds.png，最前景） -->
+    <img id="s1-reeds" class="p-layer s1-img"
+         src="act1_reeds.png"
+         style="z-index:6"/>
+
+    <!-- L7 火把光点（canvas动态生成，叠在图层上方） -->
+    <canvas class="p-layer" id="s1-torches" style="z-index:7"></canvas>
+
+    <!-- 动效层：月亮倒影荡漾 + 浮光粒子 -->
+    <canvas id="s1-fx-canvas"></canvas>
+
+    <!-- 云朵层 -->
+    <div id="s1-clouds">
+      <div class="s1-cloud" style="width:280px;height:60px;background:#a090c8;top:8%;animation-duration:55s;animation-delay:0s;"></div>
+      <div class="s1-cloud" style="width:200px;height:45px;background:#9080b8;top:5%;animation-duration:75s;animation-delay:-22s;"></div>
+      <div class="s1-cloud" style="width:320px;height:55px;background:#b0a0d0;top:12%;animation-duration:65s;animation-delay:-40s;"></div>
+      <div class="s1-cloud" style="width:180px;height:40px;background:#9888c0;top:3%;animation-duration:85s;animation-delay:-55s;"></div>
+    </div>
+
+  </div><!-- /scene-1 -->
+
+  <!-- 大娘剪影+对话框（屏幕正中央，对话框在剪影正下方）
+       替换素材：PNG 400×600 透明背景，弓背老太太剪影 -->
+  <div id="s1-grandma-wrap">
+    <!-- 大娘图片，mix-blend-mode:screen 让黑底透明 -->
+    <img id="s1-grandma-svg"
+         src="act1_grandma.png"
+         style="width:100%;height:auto;display:block;mix-blend-mode:screen"/>
+    <!-- 对话框紧贴剪影下方 -->
+    <div id="s1-grandma-dialog">
+      <span class="spk">大娘：</span>
+      <span class="txt" id="s1-grandma-txt"></span>
+    </div>
+  </div>
+
+  <!-- 鸡蛋交接场景（分层PNG叠加动画） -->
+  <div id="egg-scene">
+    <!-- 大娘全身（对话阶段显示） -->
+    <img id="egg-grandma-img" src="act1_grandma.png"/>
+    <!-- 主角的手（从下方升起） -->
+    <img id="egg-player-hand" src="act1_hand_player.png"/>
+    <!-- 大娘的手（从上方降下，覆盖主角手） -->
+    <img id="egg-grandma-hand" src="act1_hand_grandma.png"/>
+    <!-- 鸡蛋（大娘手挪开后显现） -->
+    <img id="egg-item" src="act1_eggs.png"/>
+  </div>
+
+  <!-- 导航按钮 -->
+  <button id="prev-act-btn" onclick="prevAct()">‹ 上一幕</button>
+  <button id="next-act-btn" onclick="nextAct()">下一幕 ›</button>
+  <button id="skip-dialog-btn" onclick="location.href='changzheng_index.html'">返回主页</button>
+  <!-- 帧8：白光边缘（转场预备信号） -->
+  <div id="s1-edge-glow" style="position:fixed;inset:0;z-index:18;pointer-events:none;
+    opacity:0;transition:opacity 2s ease;
+    box-shadow:inset 0 0 80px 20px rgba(255,240,200,.12)"></div>
+
+  <!-- ══ 第二幕：草地沼泽 ══ -->
+  <div class="scene" id="scene-2">
+    <!-- L1 天空（act2_sky.png，底层铺满） -->
+    <img id="s2-sky" class="p-layer s2-img"
+         src="act2_sky.png"
+         style="z-index:1;object-fit:cover;width:100%;height:100%;object-position:center top"/>
+    <!-- L2 远山（act2_mountain.png，透明PNG叠加） -->
+    <img id="s2-mountain" class="p-layer s2-img"
+         src="act2_mountain.png"
+         style="z-index:2"/>
+    <!-- L3 草甸近景（act2_swamp.png，透明PNG叠加，最前景） -->
+    <img id="s2-swamp" class="p-layer s2-img"
+         src="act2_swamp.png"
+         style="z-index:3"/>
+    <!-- 草甸顶部柔边渐变（顶边硬线融入天空背景色） -->
+    <div style="position:absolute;left:0;right:0;top:0;height:55%;z-index:3;pointer-events:none;
+      background:linear-gradient(to bottom,
+        rgba(5,10,18,1)   0%,
+        rgba(5,10,18,0.7) 30%,
+        rgba(5,10,18,0)   100%)"></div>
+    <!-- 天空动效（星星闪烁+云朵）canvas -->
+    <canvas class="p-layer" id="s2-sky-fx" style="z-index:2;pointer-events:none"></canvas>
+    <!-- 萤火虫粒子 canvas（叠在最上方） -->
+    <canvas class="p-layer" id="s2-firefly" style="z-index:5"></canvas>
+  </div>
+  <!-- 第二幕：识字课本 -->
+  <!-- 识字课本PNG，位于政委右侧 -->
+  <div id="act2-book">
+    <img src="act2_book.png" alt="识字课本"/>
+  </div>
+  <canvas id="act2-mud-canvas"></canvas>
+  <!-- 第二幕：政委（剪影+对话框，人物在上，对话在下） -->
+  <!-- 第二幕：政委（居中偏左）+ 课本（政委右侧） -->
+  <div id="act2-commissar-wrap" class="char-wrap">
+    <img src="act2_commissar.png"
+         style="height:55vh;width:auto;display:block"/>
+    <div id="act2-commissar-dialog" class="char-dialog">
+      <span class="dlg-speaker dlg-npc">政委：</span>
+      <span class="dlg-npc">人字两笔，互相撑着。你撑我，我撑你，就是一群人。</span>
+    </div>
+  </div>
+
+  <!-- ══ 第三幕：四渡赤水 ══ -->
+  <div class="scene" id="scene-3">
+    <!-- L1 夜空（纯深蓝底色，铺满） -->
+    <img id="s3-sky" class="p-layer s3-img"
+         src="act3_sky.png"
+         style="z-index:1;object-fit:cover;width:100%;height:100%"/>
+    <!-- L2 月亮（居中偏上，PNG叠加） -->
+    <img id="s3-moon" class="p-layer s3-img"
+         src="act3_moon.png"
+         style="z-index:2;object-fit:contain;object-position:center 8%"/>
+    <!-- L3 树林（两侧，PNG叠加） -->
+    <img id="s3-trees" class="p-layer s3-img"
+         src="act3_trees.png"
+         style="z-index:3;object-fit:cover;object-position:center bottom"/>
+    <!-- L4 河面+月光倒影（下半部分，PNG叠加） -->
+    <img id="s3-river" class="p-layer s3-img"
+         src="act3_river.png"
+         style="z-index:4;object-fit:cover;object-position:center bottom"/>
+    <!-- 水面波纹效果 canvas（叠在河面上，鱼群下面） -->
+    <canvas class="p-layer" id="s3-ripple" style="z-index:4;pointer-events:none"></canvas>
+    <!-- 鱼群交互 canvas（最上层） -->
+    <canvas class="p-layer" id="s3-fish" style="z-index:5;pointer-events:auto"></canvas>
+  </div>
+  <!-- 第三幕：静夜思课本（PNG素材） -->
+  <div id="act3-book">
+    <img src="act3_book.png" alt="静夜思课本"/>
+  </div>
+  <canvas id="act3-tear-canvas" width="60" height="60"></canvas>
+  <!-- 第三幕：老兵（PNG素材，左侧偏下） -->
+  <div id="act3-oldman-wrap">
+    <img src="act3_oldman.png" alt="老兵"/>
+    <div id="act3-oldman-dialog" class="char-dialog">
+      <span class="dlg-speaker dlg-npc">老兵：</span><span id="act3-oldman-text" class="dlg-npc">想家了吧？</span>
+    </div>
+  </div>
+
+  <!-- ══ 第四幕：激战娄山关 ══ -->
+  <div class="scene" id="scene-4">
+    <!-- PNG背景：天空（最底层） -->
+    <img class="p-layer act4-bg-img" id="act4-sky-img" src="act4_sky.png"
+         style="z-index:1;width:100%;height:100%;object-fit:cover;object-position:center top;position:absolute;top:0;left:0;"/>
+    <!-- PNG背景：战场地面（天空上方） -->
+    <img class="p-layer act4-bg-img" id="act4-ground-img" src="act4_ground.png"
+         style="z-index:2;width:100%;height:100%;object-fit:cover;object-position:center bottom;position:absolute;top:0;left:0;"/>
+    <canvas class="p-layer" id="s4-sky"    style="z-index:3;opacity:0"></canvas><!-- 保留canvas层（备用，透明） -->
+    <canvas class="p-layer" id="s4-smoke"  style="z-index:4"></canvas><!-- 硝烟粒子 -->
+    <canvas class="p-layer" id="s4-fx"     style="z-index:5"></canvas><!-- 子弹轨迹+炮火闪光 -->
+  </div>
+  <!-- 第四幕：李狗蛋回忆闪回 -->
+  <div id="act4-memory" style="position:fixed;inset:0;z-index:380;background:rgba(255,255,255,0);
+    opacity:0;pointer-events:none;display:flex;align-items:center;justify-content:center;
+    transition:opacity .15s">
+    <svg width="80" height="120" viewBox="0 0 80 120" xmlns="http://www.w3.org/2000/svg" opacity=".7">
+      <g fill="#e8e0d0">
+        <circle cx="40" cy="28" r="16"/>
+        <path d="M22,28 Q40,20 58,28 Q58,38 40,40 Q22,36 22,28Z"/>
+        <ellipse cx="40" cy="75" rx="20" ry="28"/>
+        <rect x="29" y="100" width="10" height="20" rx="4"/>
+        <rect x="43" y="102" width="10" height="18" rx="4"/>
+        <ellipse cx="40" cy="33" rx="5" ry="3" fill="#1a0808"/>
+      </g>
+    </svg>
+  </div>
+  <!-- 第四幕：李狗蛋遗物（PNG，左下角固定，滑动完成后渐显） -->
+  <div id="act4-relic">
+    <img src="act4_relic.png" alt="李狗蛋遗物"
+         style="height:48vh;width:auto;display:block;"/>
+  </div>
+  <!-- 第四幕：主角的手（从左下伸出，触碰再缩回） -->
+  <svg id="act4-player-hand" width="130" height="100" viewBox="0 0 130 100" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(10,10)">
+      <!-- 手臂 -->
+      <path d="M0,90 Q10,60 25,40" stroke="#3a2218" stroke-width="20" fill="none" stroke-linecap="round"/>
+      <!-- 手掌（伸向右侧） -->
+      <path d="M20,40 Q30,28 50,24 Q65,26 72,36 L70,58 Q56,65 36,62 Q20,56 20,40Z" fill="#3a2218"/>
+      <path d="M24,40 Q20,26 24,14 Q27,10 31,14 Q33,26 30,40Z" fill="#3a2218"/>
+      <path d="M34,36 Q33,20 37,8  Q40,4 44,8  Q46,20 43,36Z" fill="#3a2218"/>
+      <path d="M44,34 Q44,18 47,8  Q50,4 53,8  Q55,18 52,34Z" fill="#3a2218"/>
+      <path d="M54,37 Q56,22 58,13 Q61,9 64,13 Q65,22 62,37Z" fill="#3a2218"/>
+      <path d="M18,52 Q5,47 3,36 Q3,26 14,26 Q20,28 22,38Z" fill="#3a2218"/>
+      <path d="M20,40 Q30,28 50,24 Q65,26 72,36 L70,58 Q56,65 36,62 Q20,56 20,40Z"
+            fill="#4a2e18" opacity=".45"/>
+    </g>
+  </svg>
+  <!-- 第四幕：炮火闪光 -->
+  <div id="act4-flash" style="position:fixed;inset:0;z-index:360;background:#fff;opacity:0;pointer-events:none;transition:opacity .08s"></div>
+
+  <!-- ══ 第五幕：飞夺泸定桥 ══ -->
+  <div class="scene" id="scene-5">
+    <!-- 全景容器：所有PNG层跟随同一横向偏移 -->
+    <div id="s5-panorama" style="position:absolute;top:0;left:0;height:100%;
+      will-change:transform;">
+      <!-- 天空（最底层） -->
+      <img id="s5-sky-img" src="act5_sky.png"
+           style="position:absolute;top:0;left:0;height:100%;width:auto;min-width:100vw;z-index:1;pointer-events:none;"/>
+      <!-- 远山+峭壁 -->
+      <img id="s5-cliff-img" src="act5_cliff.png"
+           style="position:absolute;top:0;left:0;height:100%;width:auto;min-width:100vw;z-index:2;pointer-events:none;"/>
+      <!-- 河流 -->
+      <img id="s5-river-img" src="act5_river.png"
+           style="position:absolute;top:0;left:0;height:100%;width:auto;min-width:100vw;z-index:3;pointer-events:none;"/>
+      <!-- 木板掉落canvas（在桥下方，z-index:3.5用整数4但低于桥的5） -->
+      <canvas id="s5-board-canvas" style="position:absolute;top:0;left:0;
+        width:100%;height:100%;z-index:4;pointer-events:none;"></canvas>
+      <!-- 泸定桥（晃动动画在CSS里，z-index高于木板） -->
+      <img id="s5-bridge-img" src="act5_bridge.png"
+           style="position:absolute;top:0;left:0;height:100%;width:auto;min-width:100vw;z-index:5;pointer-events:none;"/>
+    </div>
+    <!-- 动效canvas：水雾+浪花（在桥上方） -->
+    <canvas id="s5-fx-canvas" style="position:absolute;inset:0;
+      width:100%;height:100%;z-index:6;pointer-events:none;"></canvas>
+    <!-- 火把光效canvas -->
+    <canvas id="s5-torch-canvas" style="position:absolute;top:0;left:0;
+      width:100%;height:100%;z-index:7;pointer-events:none;"></canvas>
+    <!-- 火花粒子canvas -->
+    <canvas class="p-layer" id="s5-sparks" style="z-index:8"></canvas>
+    <!-- 兼容旧id -->
+    <canvas id="s5-sky"    style="display:none"></canvas>
+    <canvas id="s5-river"  style="display:none"></canvas>
+    <canvas id="s5-bridge" style="display:none"></canvas>
+  </div>
+  <!-- 第五幕：重影层 -->
+  <div id="act5-afterimage"></div>
+  <!-- 第五幕：第一视角覆盖层 -->
+  <div id="act5-pov">
+    <img src="act5_pov.png" alt="第一视角"/>
+  </div>
+  <!-- 第五幕：转黑遮罩 -->
+  <div id="act5-fadeout"></div>
+  <!-- 第五幕：黑幕上的最后一句（居中） -->
+  <div id="act5-final-line">垫着后来人的脚。</div>
+  <!-- 第五幕：蒙太奇闪回 -->
+  <div id="act5-flashback" style="position:fixed;inset:0;z-index:395;display:flex;
+    align-items:center;justify-content:center;
+    background:rgba(255,255,255,0);opacity:0;pointer-events:none;transition:opacity .12s"></div>
+  <!-- 第五幕：呐喊文字 -->
+  <div id="act5-shout" style="position:fixed;top:30%;left:50%;transform:translate(-50%,-50%);
+    z-index:375;font-size:clamp(28px,5vw,55px);letter-spacing:.3em;
+    color:rgba(255,220,180,.9);text-shadow:0 0 40px rgba(255,150,50,.7);
+    opacity:0;transition:opacity .3s;pointer-events:none;font-weight:bold">啊——</div>
+
+  <!-- ══ 第六幕：夹金山 ══ -->
+  <div class="scene" id="scene-6">
+    <!-- 擦雪底层：图腾岩石 -->
+    <img id="act6-glyph-img" src="act6_glyph.png"
+         style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;pointer-events:none;"/>
+    <!-- 雪覆盖canvas（绘制act6_snow.png，可被擦除） -->
+    <canvas class="p-layer" id="s6-erase" style="z-index:3;"></canvas>
+    <!-- 暴风雪动效 -->
+    <canvas class="p-layer" id="s6-storm" style="z-index:7"></canvas>
+  </div>
+
+  <!-- 第六幕：各场景图层（统一用.act6-scene类） -->
+  <!-- 场景0：老兵俯卧（sub1后出现，对话在此图上） -->
+  <div id="act6-soldier" class="act6-scene">
+    <img src="act6_soldier.png" alt="老兵俯卧雪地"/>
+  </div>
+  <!-- 场景1：雪地夕阳空景 -->
+  <div id="act6-scene1" class="act6-scene">
+    <img src="act6_scene1.png" alt="雪地夕阳"/>
+  </div>
+  <!-- 场景3：手持木棍 -->
+  <div id="act6-scene3" class="act6-scene">
+    <img src="act6_scene3.png" alt="手持木棍"/>
+  </div>
+  <!-- 场景2：手托雪花 -->
+  <div id="act6-scene2" class="act6-scene">
+    <img src="act6_scene2.png" alt="手托雪花"/>
+  </div>
+  <!-- 场景4：主角爬山背影（最后一帧，切第七幕前） -->
+  <div id="act6-scene4" class="act6-scene">
+    <img src="act6_scene4.png" alt="爬山背影"/>
+  </div>
+
+  <!-- 第六幕：老兵对话框（叠在soldier图上） -->
+  <div id="act6-oldman-wrap">
+    <div id="act6-oldman-dialog" class="char-dialog">
+      <span class="dlg-speaker dlg-npc">老兵：</span><span class="dlg-npc">小鬼……活……着……</span>
+    </div>
+  </div>
+
+
+  <!-- ══ 第七幕：会宁会师 ══ -->
+  <div class="scene" id="scene-7">
+    <!-- 背景PNG（始终显示） -->
+    <img id="act7-bg-img" src="act7_bg.png" alt="会宁会师场景"/>
+    <!-- 花瓣/象征物粒子 -->
+    <canvas class="p-layer" id="s7-petals" style="z-index:8"></canvas>
+    <!-- 保留兼容 -->
+    <canvas class="p-layer" id="s7-sky"   style="display:none"></canvas>
+    <canvas class="p-layer" id="s7-crowd" style="display:none"></canvas>
+  </div>
+  <!-- 画圈轨迹canvas（固定全屏，第七幕交互时启用） -->
+  <canvas id="act7-trail-canvas"></canvas>
+  <!-- 第七幕：回忆风暴 -->
+  <canvas id="act7-memory-canvas" style="position:fixed;inset:0;z-index:385;pointer-events:none;opacity:0;transition:opacity .3s"></canvas>
+  <!-- 第七幕：大娘的儿子（四张表情图，画面居中） -->
+  <div id="act7-son-wrap" style="position:fixed;left:50%;bottom:8%;
+    transform:translateX(-50%);
+    z-index:292;opacity:0;transition:opacity 1s ease;pointer-events:none;">
+    <img id="act7-son-appear" src="act7_son_appear.png" alt="出现"
+         style="height:72vh;width:auto;display:block;"/>
+    <img id="act7-son-doubt"  src="act7_son_doubt.png"  alt="犹疑"
+         style="height:72vh;width:auto;display:none;"/>
+    <img id="act7-son-joy"    src="act7_son_joy.png"    alt="惊喜"
+         style="height:72vh;width:auto;display:none;"/>
+    <img id="act7-son-tears"  src="act7_son_tears.png"  alt="热泪盈眶"
+         style="height:72vh;width:auto;display:none;"/>
+    <div id="act7-son-name" style="
+      position:absolute;bottom:8%;left:50%;transform:translateX(-50%);
+      font-size:11px;letter-spacing:.25em;
+      color:rgba(240,210,140,.7);opacity:0;transition:opacity .8s ease;
+      font-family:var(--font-pixel);white-space:nowrap;">大娘的儿子</div>
+  </div>
+  <!-- 第七幕：大娘儿子对话框（人物左侧） -->
+  <div id="act7-son-dialog" style="
+    position:fixed;
+    left:calc(50% - 36vh - 180px);
+    bottom:50%;
+    width:310px;
+    background:rgba(8,5,2,.92);
+    border:1px solid rgba(255,175,70,.32);
+    border-radius:4px 4px 4px 0;
+    padding:18px 22px 22px;
+    z-index:355;
+    opacity:0;
+    transition:opacity .5s ease;
+    box-sizing:border-box;
+    display:block;
+  ">
+    <div style="font-size:16px;color:rgba(240,210,140,.65);display:block;margin-bottom:8px;">大娘的儿子：</div>
+    <div id="act7-son-text" style="font-size:19px;color:#f0d880;display:block;line-height:1.9;letter-spacing:.12em;word-break:break-all;white-space:normal;"></div>
+  </div>
+
+  <!-- 第七幕：最终定格文字（首尾呼应开场星空） -->
+  <div id="act7-final-text">
+    <!-- 星星背景（复用开场效果） -->
+    <canvas id="act7-final-stars" style="position:absolute;inset:0;pointer-events:none;z-index:0"></canvas>
+    <!-- 逐句渐显文字 -->
+    <div style="position:relative;z-index:1;text-align:center;">
+      <div class="final-line" id="fl0">两年前我不知道什么叫长征。</div>
+      <div class="final-line" id="fl1">现在我知道了：</div>
+      <div class="final-line" id="fl2">长征，</div>
+      <div class="final-line" id="fl3">就是把一条命走成一条路，</div>
+      <div class="final-line" id="fl4">让后人有路可走。</div>
+      <div class="dedication" id="fl-dedication">谨以此献给所有参加过长征的红军战士</div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ══════════════════════════════════════════════
+     结尾
+══════════════════════════════════════════════ -->
+<div id="ending">
+  <div id="ending-text">
+    路走完了，但故事可以重新走。<br>
+    还想体验其他方式吗？
+  </div>
+  <div id="ending-btns">
+    <button class="ending-btn" onclick="restartStory()">↩ 再走一次</button>
+    <button class="ending-btn primary" onclick="location.href='game_a.html'">🔥 薪火征程</button>
+    <button class="ending-btn primary" onclick="location.href='game_b.html'">⭐ 征途·红星</button>
+    <button class="ending-btn" onclick="location.href='changzheng_index.html'">返回主页</button>
+  </div>
+</div>
+
+<!-- 游戏B -->
+<div id="game-b-wrap">
+  <div id="game-b-header">
+    <span>征途·红星</span>
+    <button id="game-b-close" onclick="closeGameB()">✕ 关闭</button>
+  </div>
+  <!-- ↓↓↓ 将 game_b.html 替换为你们的游戏B文件路径 ↓↓↓ -->
+  <iframe id="game-b-iframe" src="game_b.html" allowfullscreen></iframe>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   工具函数
+══════════════════════════════════════════════════════════ */
+const lerp=(a,b,t)=>a+(b-a)*t;
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const easeOut=t=>1-Math.pow(1-t,3);
+const easeOut5=t=>1-Math.pow(1-t,5);
+const easeInOut=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+const W=()=>window.innerWidth;
+const H=()=>window.innerHeight;
+const qs=id=>document.getElementById(id);
+
+/* ══════════════════════════════════════════════════════════
+   光标
+══════════════════════════════════════════════════════════ */
+let mx=W()/2,my=H()/2;
+const cursorEl=qs('cursor');
+document.addEventListener('mousemove',e=>{
+  mx=e.clientX;my=e.clientY;
+  if(cursorEl){cursorEl.style.left=mx+'px';cursorEl.style.top=my+'px';}
+});
+
+/* ══════════════════════════════════════════════════════════
+   全局状态
+══════════════════════════════════════════════════════════ */
+let phase='intro';
+let currentAct=1;
+let scrollY=0,targetScrollY=0;
+const SCROLL_PER_ACT=1400;
+const TOTAL_ACTS=7;
+
+/* ══════════════════════════════════════════════════════════
+   开头星空
+══════════════════════════════════════════════════════════ */
+(function initIntroStars(){
+  try{
+    const c=qs('intro-stars');
+    if(!c) return;
+    c.style.cssText='position:absolute;inset:0;pointer-events:none';
+    function resize(){c.width=W();c.height=H();}
+    resize();window.addEventListener('resize',resize);
+    const stars=Array.from({length:180},()=>({
+      x:Math.random(),y:Math.random()*.7,
+      r:.3+Math.random()*1.1,o:.2+Math.random()*.5,
+      ph:Math.random()*Math.PI*2,sp:.005+Math.random()*.012
+    }));
+    function draw(){
+      const ctx=c.getContext('2d');
+      ctx.clearRect(0,0,c.width,c.height);
+      stars.forEach(s=>{
+        s.ph+=s.sp;
+        ctx.beginPath();ctx.arc(s.x*c.width,s.y*c.height,s.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(220,230,255,${s.o*(0.6+0.4*Math.sin(s.ph))})`;
+        ctx.fill();
+      });
+      if(phase==='intro') requestAnimationFrame(draw);
+    }
+    draw();
+  }catch(e){console.warn('initIntroStars error:',e);}
+})();
+
+/* ══════════════════════════════════════════════════════════
+   开头文字序列
+══════════════════════════════════════════════════════════ */
+window.addEventListener('load',()=>{
+  const delays=[400,1200,2100,3000];
+  ['iline0','iline1','iline2','iline3'].forEach((id,i)=>{
+    setTimeout(()=>qs(id)?.classList.add('show'),delays[i]);
+  });
+});
+
+/* ══════════════════════════════════════════════════════════
+   进入游戏A
+══════════════════════════════════════════════════════════ */
+function enterGameA(){
+  const mask=qs('global-mask');
+  mask.style.opacity='1';
+  setTimeout(()=>{
+    qs('intro').style.display='none';
+    const wrap=qs('game-a-wrap');
+    // 每次进入都重新加载iframe，防止restart后src变成about:blank
+    const iframe=qs('game-a-iframe');
+    if(iframe&&(iframe.src==='about:blank'||!iframe.src||iframe.src==='')){
+      iframe.src='game_a.html';
+    }
+    wrap.style.display='flex';
+    phase='game-a';
+    mask.style.opacity='0';
+  },700);
+}
+
+/* ══════════════════════════════════════════════════════════
+   跳过游戏A / 游戏A通关 → 进入正片
+   在游戏A的HTML里，通关时调用：
+     window.parent.postMessage('gameA_complete','*')
+══════════════════════════════════════════════════════════ */
+function skipGameA(){ enterMain(); }
+
+// 返回选关：向iframe发消息，让游戏回到选关菜单
+function returnGameAMenu(){
+  const iframe=qs('game-a-iframe');
+  if(iframe&&iframe.contentWindow){
+    try{
+      iframe.contentWindow.backToMenu(); // 直接调用游戏内函数
+    }catch(e){
+      // 跨域时用postMessage
+      iframe.contentWindow.postMessage('backToMenu','*');
+    }
+  }
+}
+window.addEventListener('message',e=>{
+  if(e.data==='gameA_complete') enterMain();
+});
+
+function enterMain(){
+  const mask=qs('global-mask');
+  mask.style.opacity='1';
+  setTimeout(()=>{
+    // intro 숨기기 (직접 enterMain 호출 시에도 동작하도록)
+    qs('intro').style.display='none';
+    // 彻底停止游戏：清空iframe src，终止所有音效
+    const iframe=qs('game-a-iframe');
+    if(iframe){
+      iframe.src='about:blank';
+    }
+    qs('game-a-wrap').style.display='none';
+    qs('main').style.display='block';
+    phase='main';
+    currentAct=1;
+    activateScene(1);
+    mask.style.opacity='0';
+    startMainLoop();
+  },800);
+}
+
+/* ══════════════════════════════════════════════════════════
+   场景激活
+══════════════════════════════════════════════════════════ */
+function activateScene(n){
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  qs(`scene-${n}`)?.classList.add('active');
+  const labels=['','第一幕 · 夜渡于都河','第二幕 · 草地沼泽',
+    '第三幕 · 四渡赤水','第四幕 · 激战娄山关',
+    '第五幕 · 飞夺泸定桥','第六幕 · 夹金山','第七幕 · 会宁会师'];
+  qs('act-label').textContent=labels[n]||'';
+  resetSubtitles();
+  resetHints(n);
+  // 上一幕按钮：第一幕不显示，其他幕显示
+  const prevBtn=qs('prev-act-btn');
+  if(n>1) prevBtn.classList.add('show');
+  else prevBtn.classList.remove('show');
+  // 下一幕按钮：第七幕不显示，其他幕显示
+  const nextBtn=qs('next-act-btn');
+  if(n<TOTAL_ACTS) nextBtn.classList.add('show');
+  else nextBtn.classList.remove('show');
+  // 跳过按钮：所有幕显示
+  qs('skip-dialog-btn').classList.add('show');
+  ({1:initAct1,2:initAct2,3:initAct3,4:initAct4,
+    5:initAct5,6:initAct6,7:initAct7}[n]||function(){})();
+}
+
+/* ══════════════════════════════════════════════════════════
+   字幕系统
+══════════════════════════════════════════════════════════ */
+function resetSubtitles(){
+  const wrap=qs('subtitle-wrap');
+  wrap.innerHTML='';
+  hidePlayerDialog();
+}
+/* ══════════════════════════════════════════════
+   字幕系统
+   - narrate：旁白，进入底部字幕条（半透明黑底）
+   - player/npc：对话，不进字幕条（由各幕对话框处理）
+══════════════════════════════════════════════ */
+function showSub(text,type='narrate',speaker='',delay=0){
+  // 只有旁白进入字幕条
+  if(type!=='narrate') return null;
+  const wrap=qs('subtitle-wrap');
+  // 清除旧字幕（最多保留2句）
+  const existing=wrap.querySelectorAll('.sub-line');
+  if(existing.length>=2){
+    const oldest=existing[0];
+    oldest.style.opacity='0';
+    setTimeout(()=>oldest.remove(),800);
+  }
+  const el=document.createElement('span');
+  el.className='sub-line narrate';
+  el.textContent=text;
+  wrap.appendChild(el);
+  setTimeout(()=>el.classList.add('visible'),delay+80);
+  return el;
+}
+function hideSub(el,delay=0){
+  if(!el) return;
+  setTimeout(()=>{el.style.opacity='0';
+    setTimeout(()=>el.remove(),900);},delay);
+}
+function hideAllSubs(delay=0){
+  setTimeout(()=>{
+    qs('subtitle-wrap').querySelectorAll('.sub-line').forEach(el=>{
+      el.style.opacity='0';
+      setTimeout(()=>el.remove(),900);
+    });
+  },delay);
+}
+
+/* ── 主角对话框：显示/隐藏 ── */
+function showPlayerDialog(text, duration=0){
+  const el=qs('player-dialog');
+  el.textContent=text;
+  el.classList.add('show');
+  // duration>0 时自动隐藏
+  if(duration>0){
+    setTimeout(()=>hidePlayerDialog(), duration);
+  }
+}
+function hidePlayerDialog(){
+  qs('player-dialog').classList.remove('show');
+}
+
+/* ══════════════════════════════════════════════════════════
+   提示系统
+══════════════════════════════════════════════════════════ */
+const HINTS={
+  2:'滑动，萤火虫会来陪你',
+  3:'用手指划过水面',
+  4:'↓ 下滑继续',
+  5:'从左向右滑动，传递火把信号',
+  6:'在雪坡上划动，擦去霜雪',
+  7:'在屏幕上画圈，召唤所有的回忆'
+};
+function resetHints(n){
+  if(n===1){qs('hint-wrap').style.opacity='0';return;}
+  qs('hint-text').textContent=HINTS[n]||'';
+  qs('hint-wrap').style.opacity=HINTS[n]?'1':'0';
+}
+function hideHint(){qs('hint-wrap').style.opacity='0';}
+function setHint(text){
+  qs('hint-text').textContent=text||'';
+  qs('hint-wrap').style.opacity=text?'1':'0';
+}
+
+/* ══════════════════════════════════════════════════════════
+   输入系统（分发给当前幕处理）
+══════════════════════════════════════════════════════════ */
+let touchStartY=0;
+const ACT_SCROLL_HANDLERS={
+  1: d=>handleAct1Scroll(d),
+  4: d=>handleAct4Scroll(d),
+  5: d=>handleAct5Scroll(d),
+  7: d=>handleAct7Scroll(d),
+  // 2-7在各自幕里定义，这里用默认的progress驱动
+};
+function handleAct7Scroll(delta){
+  // 画圈未完成前，progress锁在15%
+  const LOCK=Math.floor(SCROLL_PER_ACT*0.15);
+  if(delta<0){
+    targetScrollY=clamp(targetScrollY+delta*.65,0,SCROLL_PER_ACT);
+    if(targetScrollY<=0&&currentAct>1){
+      if(!dispatchScroll._upAcc) dispatchScroll._upAcc=0;
+      dispatchScroll._upAcc+=Math.abs(delta);
+      if(dispatchScroll._upAcc>400){dispatchScroll._upAcc=0;switchToAct(currentAct-1);}
+    } else {dispatchScroll._upAcc=0;}
+    return;
+  }
+  dispatchScroll._upAcc=0;
+  if(act7.circleCount<1){
+    targetScrollY=clamp(targetScrollY+delta*.65,0,LOCK);
+  } else {
+    targetScrollY=clamp(targetScrollY+delta*.65,0,SCROLL_PER_ACT);
+  }
+}
+function handleAct5Scroll(delta){
+  // 火把未全亮前，progress锁在10%（防止滑动点火把时progress跑飞）
+  const LOCK=Math.floor(SCROLL_PER_ACT*0.10);
+  if(delta<0){
+    targetScrollY=clamp(targetScrollY+delta*.65,0,SCROLL_PER_ACT);
+    if(targetScrollY<=0&&currentAct>1){
+      if(!dispatchScroll._upAcc) dispatchScroll._upAcc=0;
+      dispatchScroll._upAcc+=Math.abs(delta);
+      if(dispatchScroll._upAcc>400){dispatchScroll._upAcc=0;switchToAct(currentAct-1);}
+    } else {dispatchScroll._upAcc=0;}
+    return;
+  }
+  dispatchScroll._upAcc=0;
+  if(act5.torchLit<13){
+    // 火把未全亮：锁在10%
+    targetScrollY=clamp(targetScrollY+delta*.65,0,LOCK);
+  } else {
+    // 全亮后：正常推进
+    targetScrollY=clamp(targetScrollY+delta*.65,0,SCROLL_PER_ACT);
+  }
+}
+function handleAct4Scroll(delta){
+  // 滑动交互完成前，progress锁在30%（0.30 * 1400 = 420）
+  const LOCK=420;
+  if(delta<0){
+    targetScrollY=clamp(targetScrollY+delta*.65,0,SCROLL_PER_ACT);
+    if(targetScrollY<=0&&currentAct>1){
+      if(!dispatchScroll._upAcc) dispatchScroll._upAcc=0;
+      dispatchScroll._upAcc+=Math.abs(delta);
+      if(dispatchScroll._upAcc>400){dispatchScroll._upAcc=0;switchToAct(currentAct-1);}
+    } else {dispatchScroll._upAcc=0;}
+    return;
+  }
+  dispatchScroll._upAcc=0;
+  if(!act4.relicShown){
+    // 未完成滑动交互：最多推进到30%
+    targetScrollY=clamp(targetScrollY+delta*.65,0,LOCK);
+  } else {
+    // 完成后：正常推进，但不超过100%
+    targetScrollY=clamp(targetScrollY+delta*.65,0,SCROLL_PER_ACT);
+  }
+}
+function dispatchScroll(delta){
+  if(phase!=='main') return;
+  const handler=ACT_SCROLL_HANDLERS[currentAct];
+  if(handler){ handler(delta); return; }
+  // 默认（幕2-7）：向上累积超过400px→回上一幕
+  if(delta<0){
+    targetScrollY=clamp(targetScrollY+delta*.65,0,SCROLL_PER_ACT);
+    // 已在幕首且继续向上→回上一幕
+    if(targetScrollY<=0&&currentAct>1){
+      if(!dispatchScroll._upAcc) dispatchScroll._upAcc=0;
+      dispatchScroll._upAcc+=Math.abs(delta);
+      if(dispatchScroll._upAcc>400){
+        dispatchScroll._upAcc=0;
+        switchToAct(currentAct-1);
+      }
+    } else {
+      dispatchScroll._upAcc=0;
+    }
+    return;
+  }
+  dispatchScroll._upAcc=0;
+  targetScrollY=clamp(targetScrollY+delta*.65,0,SCROLL_PER_ACT);
+}
+function setupInput(){
+  window.addEventListener('wheel',e=>{
+    if(phase!=='main') return;
+    e.preventDefault();
+    dispatchScroll(e.deltaY);
+  },{passive:false});
+  window.addEventListener('touchstart',e=>{
+    touchStartY=e.touches[0].clientY;
+  },{passive:true});
+  window.addEventListener('touchmove',e=>{
+    if(phase!=='main') return;
+    const dy=touchStartY-e.touches[0].clientY;
+    dispatchScroll(dy*1.4);
+    touchStartY=e.touches[0].clientY;
+    e.preventDefault();
+  },{passive:false});
+  window.addEventListener('keydown',e=>{
+    if(phase!=='main') return;
+    if(e.key==='ArrowDown'||e.key===' ') dispatchScroll(80);
+    if(e.key==='ArrowUp') dispatchScroll(-80);
+  });
+}
+setupInput();
+
+/* ══════════════════════════════════════════════════════════
+   视差辅助
+══════════════════════════════════════════════════════════ */
+function parallax(act,sy){
+  const speeds={
+    [`s${act}-sky`]:0.015,[`s${act}-mountain`]:0.04,
+    [`s${act}-village`]:0.08,[`s${act}-grass`]:0.06,
+    [`s${act}-river`]:0,   // 第三幕河面PNG不动
+    [`s${act}-far`]:0.05,
+    [`s${act}-shore`]:0.12,[`s${act}-reeds`]:0.16,
+    [`s${act}-reeds2`]:0.16,[`s${act}-fog`]:0.03,
+    [`s${act}-smoke`]:0.03,[`s${act}-props`]:0.1,
+    [`s${act}-fx`]:0.08,[`s${act}-swamp`]:0.025,
+  };
+  Object.entries(speeds).forEach(([id,sp])=>{
+    const el=qs(id);
+    if(el) el.style.transform=`translateY(${-sy*sp}px)`;
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   幕切换
+══════════════════════════════════════════════════════════ */
+let switching=false;
+function switchToAct(n){
+  if(switching||n===currentAct) return;
+  switching=true;
+  // 清理当前幕的浮层元素
+  cleanupAct(currentAct);
+  const mask=qs('scene-mask');
+  mask.style.background=getTransitionColor(currentAct,n);
+  mask.style.transition='opacity .55s ease';
+  mask.style.opacity='1';
+  setTimeout(()=>{
+    targetScrollY=0;scrollY=0;
+    currentAct=n;
+    activateScene(n);
+    mask.style.opacity='0';
+    setTimeout(()=>{switching=false;},600);
+  },580);
+}
+
+function cleanupAct(n){
+  hideAllSubs();
+  // 跳过/上一幕/下一幕按钮
+  qs('skip-dialog-btn').classList.remove('show');
+  qs('next-act-btn').classList.remove('show');
+  if(n===1){
+    qs('s1-grandma-wrap').style.opacity='0';
+    qs('s1-grandma-wrap').classList.remove('show');
+    qs('s1-grandma-dialog').classList.remove('show');
+    if(act1.typingTimer) clearTimeout(act1.typingTimer);
+    const es=qs('egg-scene');
+    es.style.transition='opacity .5s ease';es.style.opacity='0';
+    setTimeout(()=>{es.classList.remove('active');es.style.cssText='';},600);
+  }
+  if(n===2){
+    qs('act2-book').classList.remove('show');
+    qs('act2-mud-canvas').classList.remove('show');
+    qs('act2-commissar-wrap').classList.remove('show');
+    qs('act2-commissar-dialog').classList.remove('show');
+  }
+  if(n===3){
+    qs('act3-book').classList.remove('show');
+    qs('act3-oldman-wrap').classList.remove('show');
+    qs('act3-tear-canvas').classList.remove('show');
+  }
+  if(n===4){
+    if(act4.flashTimer){clearInterval(act4.flashTimer);act4.flashTimer=null;}
+    qs('act4-flash').style.opacity='0';
+    const mem=qs('act4-memory');if(mem)mem.classList.remove('show');
+    // 遗物瞬间隐藏
+    const relic=qs('act4-relic');
+    relic.style.transition='none';
+    relic.style.opacity='0';
+    relic.classList.remove('show');
+    const ph=qs('act4-player-hand');
+    ph.classList.remove('enter','retract','tremble');ph.style.opacity='0';
+    qs('hint-icon').classList.remove('swipe-hint');
+    // 移除document上的滑动监听
+    if(act4._handlers){
+      const h=act4._handlers;
+      document.removeEventListener('mousedown', h.onMouseDown);
+      document.removeEventListener('mousemove', h.onMouseMove);
+      document.removeEventListener('mouseup',   h.onMouseUp);
+      document.removeEventListener('touchstart',h.onTouchStart);
+      document.removeEventListener('touchmove', h.onTouchMove);
+      document.removeEventListener('touchend',  h.onTouchEnd);
+      act4._handlers=null;
+    }
+  }
+  if(n===5){
+    qs('act5-flashback').classList.remove('show');
+    qs('act5-shout').classList.remove('show');
+    const pov=qs('act5-pov');if(pov) pov.classList.remove('show');
+    const fo=qs('act5-fadeout');
+    if(fo){fo.style.transition='none';fo.style.opacity='0';}
+    const fl=qs('act5-final-line');
+    if(fl) fl.classList.remove('show');
+    const ai=qs('act5-afterimage');
+    if(ai) ai.style.opacity='0';
+    // 重置全景位置
+    const pan=qs('s5-panorama');
+    if(pan) pan.style.transform='translateX(0)';
+    // 移除document事件监听
+    if(act5._handlers){
+      const h=act5._handlers;
+      document.removeEventListener('mousedown',h.onPD);
+      document.removeEventListener('mousemove',h.onPM);
+      document.removeEventListener('mouseup',h.onPU);
+      document.removeEventListener('touchstart',h.onPD);
+      document.removeEventListener('touchmove',h.onPM);
+      document.removeEventListener('touchend',h.onPU);
+      act5._handlers=null;
+    }
+  }
+  if(n===6){
+    // 恢复scene-6底层（下次进入时擦雪交互需要显示）
+    qs('scene-6').style.opacity='';
+    // 清理所有场景图
+    ['act6-soldier','act6-scene1','act6-scene2','act6-scene3','act6-scene4'].forEach(id=>{
+      const el=qs(id);if(el) el.classList.remove('show');
+    });
+    qs('act6-oldman-wrap').classList.remove('show');
+    qs('act6-oldman-dialog').classList.remove('show');
+  }
+  if(n===7){
+    const ft=qs('act7-final-text');
+    ft.classList.remove('show');
+    ['fl0','fl1','fl2','fl3','fl4','fl-dedication'].forEach(id=>{
+      const el=qs(id);if(el) el.classList.remove('show');
+    });
+    const mc=qs('act7-memory-canvas');if(mc)mc.style.opacity='0';
+    // 重置大娘儿子
+    const sw=qs('act7-son-wrap');
+    if(sw){sw.style.opacity='0';}
+    const sn=qs('act7-son-name');if(sn)sn.style.opacity='0';
+    const sd=qs('act7-son-dialog');if(sd){sd.style.opacity='0';}
+    if(act7._sonDlgTimer) clearTimeout(act7._sonDlgTimer);
+    // 重置所有表情图显示状态
+    ['appear','doubt','joy','tears'].forEach(e=>{
+      const el=qs(`act7-son-${e}`);
+      if(el) el.style.display=(e==='appear'?'block':'none');
+    });
+    // 清空轨迹canvas
+    const tc=qs('act7-trail-canvas');
+    if(tc){const ctx=tc.getContext('2d');ctx.clearRect(0,0,tc.width,tc.height);}
+    act7.trailPoints=[];
+    // 移除document事件监听
+    if(act7._handlers){
+      document.removeEventListener('mousemove',act7._handlers.onMove);
+      document.removeEventListener('mouseup',act7._handlers.onUp);
+      document.removeEventListener('touchmove',act7._handlers.onMove);
+      document.removeEventListener('touchend',act7._handlers.onUp);
+      act7._handlers=null;
+    }
+  }
+}
+function getTransitionColor(from,to){
+  const map={
+    '1-2':'#0d1a0a','2-3':'#0a1020','3-4':'#1a0808',
+    '4-5':'#0a0808','5-6':'#c8d8e0','6-7':'#3a2c18',
+  };
+  return map[`${from}-${to}`]||'#080612';
+}
+
+/* ══════════════════════════════════════════════════════════
+
+   ██████  第一幕  ██████
+   阶段：0初始 1点火把 2独白+剪影 3对话 4鸡蛋 5尾声
+
+══════════════════════════════════════════════════════════ */
+const TORCH_N=18;
+let act1={
+  stage:0,stars:[],torches:[],litCount:0,
+  torchDone:false,sub0Complete:false,grandmaShown:false,dialogDone:false,
+  eggDone:false,sub0Done:false,sub1Done:false,sub2Done:false,sub3Done:false,
+  typingTimer:null,typingFull:'',typingIdx:0,typingDone:false,
+  typingOnDone:null,typingStarted:false,upScrollAcc:0
+};
+/* ══════════════════════════════════════════════════════════
+   第一幕阶段：
+   0  初始静止，2秒后提示出现
+   1  下滑逐一点亮火把（交互必须完成）
+      ├ 第1个火把亮 → 独白1逐字
+      └ 继续滑 → 更多火把 + 独白2淡入
+   2  全部点亮 → 自动：集体闪烁→光链→1s后大娘走入→对话字幕
+   3  自动：鸡蛋特写动画→独白3
+   4  自动：火把减弱+画面左移→独白4停留
+   5  自动收尾静止，白光边缘 → 用户下滑触发转场
+══════════════════════════════════════════════════════════ */
+
+// 状态
+let act1_autoRunning=false; // 帧2以后是否在自动播放中
+
+function initAct1(){
+  act1={stage:0,stars:[],torches:[],litCount:0,
+    torchDone:false,sub0Complete:false,grandmaShown:false,dialogDone:false,
+    eggDone:false,sub0Done:false,sub1Done:false,sub2Done:false,sub3Done:false,
+    typingTimer:null,typingFull:'',typingIdx:0,typingDone:false,
+    typingOnDone:null,typingStarted:false,upScrollAcc:0,
+    panOffset:0  // 第7帧左移偏移量
+  };
+  act1_autoRunning=false;
+  act1_scrollAcc=0; // 重置累积滑动量，防止返回时跳帧
+  // 重置所有UI元素状态
+  const gw=qs('s1-grandma-wrap');
+  if(gw){gw.classList.remove('show');gw.style.opacity='';}  // 清除内联样式，不能设成'0'
+  const gd=qs('s1-grandma-dialog');
+  if(gd){gd.classList.remove('show');gd.style.opacity='';}
+  // 重置鸡蛋场景
+  const es=qs('egg-scene');
+  if(es){es.classList.remove('active');es.style.opacity='';}
+  ['egg-grandma-img','egg-player-hand','egg-grandma-hand','egg-item'].forEach(id=>{
+    const el=qs(id);if(el){el.className='';el.style.cssText='';}
+  });
+
+  // 天空
+  // 天空、星星、月亮均由 act1_sky.png 提供，无需canvas
+
+  // 月亮已包含在 act1_sky.png 中，无需单独绘制
+
+  // 火把
+  act1.torches=Array.from({length:TORCH_N},(_,i)=>{
+    const far=i>=9;const t=(i%9)/8;
+    return{bx:lerp(.08,.92,t),
+      by:far?lerp(.60,.66,Math.abs(t-.5)*2):lerp(.72,.78,Math.abs(t-.5)*2),
+      lit:false,bright:0,brightTarget:1,
+      flicker:Math.random()*Math.PI*2,fsp:.07+Math.random()*.04,particles:[]};
+  });
+  const tc=qs('s1-torches');tc.width=W();tc.height=H();
+
+  qs('skip-dialog-btn').classList.add('show');
+  qs('prev-act-btn').classList.remove('show');
+  // 2秒后提示出现
+  setTimeout(()=>setHint('下滑，点亮送行的火把'),2000);
+  const fxc=qs('s1-fx-canvas');if(fxc){fxc.width=W();fxc.height=H();}
+  s1Particles=[];
+}
+
+/* ── 第一幕滚动分发 ── */
+/* ══════════════════════════════════════════
+   第一幕阶段说明（全部由用户下滑推进）：
+   0  初始静止
+   1  下滑逐一点亮火把（需全部点亮）
+   2  等待用户下滑→触发帧4（火把闪烁+光链）
+   3  等待用户下滑→大娘渐显走入+打字对话
+   4  对话打完→等待用户下滑→帧6鸡蛋动画（自动）
+   5  动画结束→等待用户下滑→独白3
+   6  等待用户下滑→帧7火把减弱+画面左移+独白4
+   7  等待用户下滑→转场
+══════════════════════════════════════════ */
+// 帧推进需要累积滑动距离才触发（防止轻微误触）
+const ACT1_FRAME_THRESHOLD = 120; // px，换帧所需累积滑动量
+let act1_scrollAcc = 0; // 累积滑动量（只用于帧推进）
+
+function handleAct1Scroll(delta){
+  if(delta<0){
+    act1.upScrollAcc+=Math.abs(delta);
+    return;
+  }
+  act1.upScrollAcc=0;
+
+  // 阶段1（点火把）：直接按delta控制，但每次最多亮2个
+  if(act1.stage===1){
+    act1_stage1_scroll(delta);
+    return;
+  }
+  // 阶段0和其他阶段：需要累积达到阈值才触发换帧
+  act1_scrollAcc += Math.abs(delta);
+  if(act1_scrollAcc < ACT1_FRAME_THRESHOLD) return;
+  act1_scrollAcc = 0; // 消耗累积量
+
+  switch(act1.stage){
+    case 0: act1.stage=1; break;
+    case 2: act1_stage2_userScroll(); break;
+    case 3: act1_stage3_userScroll(); break;
+    case 4: act1_stage4_userScroll(); break;
+    case 5: act1_stage5_userScroll(); break;
+    case 6: act1_stage6_userScroll(); break;
+  }
+}
+
+/* 阶段1：逐一点亮火把 */
+/* ══════════════════════════════════════
+   第一幕完整阶段逻辑
+   stage 1  下滑点亮火把
+            └ 第1个亮→独白1逐字「一九三四年…夜。」
+            └ 独白1打完后，继续下滑→独白2「乡亲们举着火把…」
+            └ 全部点亮→stage 2
+   stage 2  下滑→火把集体闪烁→stage 3
+   stage 3  下滑→大娘渐显+打字「娃，打了胜仗回来吃。」→stage 4
+   stage 4  下滑→鸡蛋交接动画（自动播完）
+            └ 动画结束→大娘渐隐→独白3「出发时…」→stage 5
+   stage 5  下滑→独白4「后来才知道…」→stage 6
+   stage 6  下滑→转场
+══════════════════════════════════════ */
+
+function act1_stage1_scroll(delta){
+  const add=Math.min(2,Math.max(1,Math.floor(Math.abs(delta)/80)));
+  const prev=act1.litCount;
+  const newLit=Math.min(TORCH_N,act1.litCount+add);
+
+  // 第1个火把亮→独白1逐字，打字完后自动出现独白2（不依赖下滑）
+  if(prev===0&&newLit>=1&&!act1.sub0Done){
+    act1.sub0Done=true;
+    setTimeout(()=>{
+      typewriteSub('一九三四年十月，于都河，夜。','narrate');
+      // 独白1打字完成后（约1200ms），自动淡入独白2
+      setTimeout(()=>{
+        if(!act1.sub1Done){
+          act1.sub1Done=true;
+          showSub('乡亲们举着火把，送我们过河。','narrate');
+        }
+      },1400);
+    },200);
+  }
+
+  for(let i=act1.litCount;i<newLit;i++) act1.torches[i].lit=true;
+  act1.litCount=newLit;
+
+  // 全部点亮→进入stage2等待下滑
+  if(act1.litCount>=TORCH_N&&!act1.torchDone){
+    act1.torchDone=true;
+    act1.stage=2;
+    hideHint();
+    setTimeout(()=>setHint('继续下滑'),800);
+  }
+}
+
+/* stage 2：火把集体闪烁，然后等待下滑触发大娘 */
+function act1_stage2_userScroll(){
+  act1.stage=-1;
+  hideHint();
+  act1.torches.forEach(t=>{t.brightTarget=2.2;});
+  setTimeout(()=>act1.torches.forEach(t=>{t.brightTarget=1.0;}),500);
+  setTimeout(()=>{
+    act1.stage=3;
+    setHint('下滑，听大娘说话');
+  },1200);
+}
+
+/* stage 3：大娘渐显+打字对话 */
+function act1_stage3_userScroll(){
+  if(act1.grandmaShown) return;
+  act1.grandmaShown=true;
+  act1.stage=-1;
+  hideHint();
+  qs('s1-grandma-wrap').classList.add('show');
+  setTimeout(()=>{
+    act1_startTypewriter('娃，打了胜仗回来吃。',()=>{
+      act1.dialogDone=true;
+      act1.stage=4;
+      setHint('下滑，接过鸡蛋');
+    });
+  },1300);
+}
+
+/* stage 4：下滑→鸡蛋交接动画，动画结束后大娘渐隐+独白3 */
+function act1_stage4_userScroll(){
+  if(!act1.dialogDone){
+    act1_forceComplete();
+    return;
+  }
+  act1.stage=-1;
+  hideHint();
+  playEggScene(()=>{
+    act1.eggDone=true;
+    // 大娘和对话框渐隐
+    qs('s1-grandma-wrap').classList.remove('show');
+    qs('s1-grandma-dialog').classList.remove('show');
+    // 独白3
+    setTimeout(()=>{
+      resetSubtitles();
+      showSub('出发时我以为很快就能回家。','narrate');
+      act1.stage=5;
+      setHint('下滑继续');
+    },600);
+  });
+}
+
+/* stage 5：下滑→独白4 */
+function act1_stage5_userScroll(){
+  if(act1.sub2Done) return;
+  act1.sub2Done=true;
+  act1.stage=-1;
+  hideHint();
+  resetSubtitles();
+  showSub('后来才知道，这一走，就是二万五千里。','narrate');
+  setTimeout(()=>{
+    act1.stage=6;
+    setHint('下滑，踏上长征之路');
+  },1000);
+}
+
+/* stage 6：下滑→转场到第二幕 */
+function act1_stage6_userScroll(){
+  switchToAct(2);
+}
+
+/* 保留空函数防止报错 */
+function act1_frame7End(){}
+function act1_frame8(){
+  const edgeEl=qs('s1-edge-glow');
+  if(edgeEl) edgeEl.style.opacity='1';
+}
+
+/* 打字机（对话用） */
+function act1_startTypewriter(text,onDone){
+  const dialog=qs('s1-grandma-dialog');
+  const txtEl=qs('s1-grandma-txt');
+  dialog.classList.add('show');
+  txtEl.textContent='';
+  act1.typingIdx=0;
+  act1.typingFull=text;
+  act1.typingOnDone=onDone;
+  act1.typingDone=false;
+  act1.typingStarted=true;
+  function typeNext(){
+    if(act1.typingIdx>=text.length){
+      act1.typingDone=true;
+      if(act1.typingOnDone){setTimeout(act1.typingOnDone,400);act1.typingOnDone=null;}
+      return;
+    }
+    txtEl.textContent+=text[act1.typingIdx++];
+    act1.typingTimer=setTimeout(typeNext,90);
+  }
+  typeNext();
+}
+function act1_forceComplete(){
+  if(act1.typingTimer) clearTimeout(act1.typingTimer);
+  if(act1.typingFull){
+    qs('s1-grandma-txt').textContent=act1.typingFull;
+    act1.typingDone=true;
+    if(act1.typingOnDone){setTimeout(act1.typingOnDone,300);act1.typingOnDone=null;}
+  }
+}
+
+/* 独白打字机（旁白用，逐字淡入效果） */
+function typewriteSub(text,type){
+  const wrap=qs('subtitle-wrap');
+  const el=document.createElement('span');
+  el.className=`sub-line ${type}`;
+  el.style.opacity='0';
+  wrap.appendChild(el);
+  let i=0;
+  el.style.transition='opacity .4s ease';
+  el.style.opacity='1';
+  function next(){
+    if(i>=text.length) return;
+    el.textContent=text.substring(0,++i);
+    setTimeout(next,60);
+  }
+  next();
+  return el;
+}
+
+/* 跳过（直接跳到帧8收尾，等待下滑转场） */
+function skipAct1Dialog(){
+  if(act1.typingTimer) clearTimeout(act1.typingTimer);
+  act1.torches.forEach(t=>{t.lit=true;t.brightTarget=0.45;});
+  act1.litCount=TORCH_N;
+  qs('s1-grandma-wrap').classList.remove('show');
+  qs('s1-grandma-dialog').classList.remove('show');
+  act1.stage=6;
+  act1.torchDone=true;act1.grandmaShown=true;
+  act1.dialogDone=true;act1.eggDone=true;
+  act1.panOffset=0;
+  resetSubtitles();
+  showSub('出发时我以为很快就能回家。','narrate');
+  setTimeout(()=>showSub('后来才知道，这一走，就是二万五千里。','narrate'),800);
+  const edgeEl=qs('s1-edge-glow');
+  if(edgeEl) edgeEl.style.opacity='1';
+  setHint('下滑，踏上长征之路');
+}
+function prevAct(){
+  if(currentAct>1) switchToAct(currentAct-1);
+}
+function nextAct(){
+  if(currentAct<TOTAL_ACTS) switchToAct(currentAct+1);
+}
+
+/* ── 火把绘制 ── */
+class Spark1{
+  constructor(x,y,b){
+    this.x=x+(Math.random()-.5)*4;this.y=y-Math.random()*5;
+    this.vx=(Math.random()-.5)*.8;this.vy=-(1+Math.random()*2);
+    this.life=1;this.decay=.014+Math.random()*.02;this.r=(1+Math.random()*2)*b;
+  }
+  update(){this.x+=this.vx;this.y+=this.vy;this.vy*=.97;this.vx*=.98;this.life-=this.decay;}
+}
+
+function drawAct1Torches(){
+  const tc=qs('s1-torches');if(!tc)return;
+  const ctx=tc.getContext('2d');
+  ctx.clearRect(0,0,tc.width,tc.height);
+  const sw=tc.width,sh=tc.height;
+  act1.torches.forEach((t,i)=>{
+    if(!t.lit)return;
+    t.flicker+=t.fsp;
+    const f=.85+.15*Math.sin(t.flicker);
+    // 平滑趋向目标亮度
+    t.bright=lerp(t.bright,t.brightTarget,.06);
+    const b=clamp(t.bright*f,0,2);
+    const tx=t.bx*sw,ty=t.by*sh;
+    const far=i>=9;
+    const gr=ctx.createRadialGradient(tx,ty,0,tx,ty,(far?26:40)*Math.min(b,1.2));
+    gr.addColorStop(0,`rgba(255,175,55,${.52*Math.min(b,1)})`);
+    gr.addColorStop(.4,`rgba(255,115,15,${.22*Math.min(b,1)})`);
+    gr.addColorStop(1,'rgba(255,75,0,0)');
+    ctx.fillStyle=gr;
+    ctx.beginPath();ctx.arc(tx,ty,(far?26:40)*Math.min(b,1.2),0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=`rgba(255,215,90,${.9*Math.min(b,1.5)})`;
+    ctx.beginPath();ctx.arc(tx,ty,(far?2.2:3.2)*Math.min(b,1.5),0,Math.PI*2);ctx.fill();
+    if(Math.random()<.3*Math.min(b,1)) t.particles.push(new Spark1(tx,ty,Math.min(b,1)));
+    t.particles=t.particles.filter(p=>{
+      p.update();if(p.life<=0)return false;
+      ctx.globalAlpha=p.life*.65*Math.min(b,1);
+      ctx.fillStyle=`rgba(255,${150+Math.floor(70*p.life)},35,1)`;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+      return true;
+    });
+    ctx.globalAlpha=1;
+  });
+  // 光链（全亮后）
+  if(act1.litCount>=TORCH_N){
+    ctx.strokeStyle='rgba(255,135,25,.32)';
+    ctx.lineWidth=1.5;ctx.setLineDash([4,6]);
+    [[0,9],[9,TORCH_N]].forEach(([a,b2])=>{
+      ctx.beginPath();
+      act1.torches.slice(a,b2).forEach((t,i)=>{
+        const tx=t.bx*sw+act1.panOffset,ty=t.by*sh;
+        i===0?ctx.moveTo(tx,ty):ctx.lineTo(tx,ty);
+      });
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+  }
+}
+
+/* 月亮倒影荡漾 + 浮光粒子 + 窗口灯光 */
+let s1FxTime=0;
+let s1Particles=[];
+class S1Particle{
+  constructor(){
+    this.x=W()*(0.3+Math.random()*0.4);
+    this.y=H()*(0.56+Math.random()*0.15);
+    this.r=1+Math.random()*1.8;
+    this.vy=-(0.08+Math.random()*0.15);
+    this.vx=(Math.random()-0.5)*0.12;
+    this.life=1;
+    this.decay=0.003+Math.random()*0.004;
+    this.alpha=0.18+Math.random()*0.22;
+  }
+  update(){this.x+=this.vx;this.y+=this.vy;this.life-=this.decay;}
+}
+
+function drawAct1FX(){
+  const c=qs('s1-fx-canvas');
+  if(!c)return;
+  if(c.width!==W()||c.height!==H()){c.width=W();c.height=H();}
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  s1FxTime+=0.018;
+
+  // 月亮倒影荡漾
+  const riverY=c.height*0.57;
+  const moonX=c.width*0.475;
+  for(let i=0;i<14;i++){
+    const t=s1FxTime+i*0.25;
+    const wobble=Math.sin(t)*7+Math.cos(t*0.65)*3;
+    const py=riverY+i*(c.height*0.015);
+    const pw=Math.max(1.5,(13-i)*1.1+Math.sin(t*1.2)*2.5);
+    const alpha=(0.07-i*0.004)*Math.abs(Math.sin(t*0.35+0.5));
+    ctx.fillStyle=`rgba(255,238,170,${alpha})`;
+    ctx.beginPath();
+    ctx.ellipse(moonX+wobble,py,pw,2.2,0,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  // 河面浮光粒子
+  if(Math.random()<0.1) s1Particles.push(new S1Particle());
+  s1Particles=s1Particles.filter(p=>{
+    p.update();if(p.life<=0)return false;
+    ctx.globalAlpha=p.life*p.alpha;
+    ctx.fillStyle='rgba(255,240,190,1)';
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+    return true;
+  });
+  ctx.globalAlpha=1;
+
+  // 村庄窗口灯光跳动
+  const villageY=c.height*0.435;
+  [{x:.22,s:16},{x:.28,s:13},{x:.34,s:15},{x:.42,s:19},
+   {x:.48,s:22},{x:.54,s:17},{x:.60,s:15},{x:.66,s:13},{x:.72,s:14}
+  ].forEach((l,i)=>{
+    const f=0.65+0.35*Math.sin(s1FxTime*2+i*1.4);
+    const g=ctx.createRadialGradient(l.x*c.width,villageY,0,l.x*c.width,villageY,l.s*f);
+    g.addColorStop(0,`rgba(255,175,55,${0.1*f})`);
+    g.addColorStop(1,'rgba(255,130,15,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.arc(l.x*c.width,villageY,l.s*f,0,Math.PI*2);ctx.fill();
+  });
+}
+
+function updateAct1(){
+  // 天空、星星、月亮均由 act1_sky.png 提供，无需canvas绘制
+  // 视差 + 帧7左移偏移
+  const pan=act1.panOffset||0;
+  // 各层视差速度：远景慢，近景快
+  const layerSpeeds=[
+    {id:'s1-mountain', ySpeed:0.06, panMult:0.1},
+    {id:'s1-village',  ySpeed:0.10, panMult:0.2},
+    {id:'s1-river',    ySpeed:0.14, panMult:0.3},
+    {id:'s1-shore',    ySpeed:0.18, panMult:0.5},
+    {id:'s1-reeds',    ySpeed:0.26, panMult:0.8},
+  ];
+  // 天空层单独处理（只有微弱视差，不参与pan）
+  const skyEl=qs('s1-sky');
+  if(skyEl) skyEl.style.transform=`translateY(0px)`;
+
+  layerSpeeds.forEach(({id,ySpeed,panMult})=>{
+    const el=qs(id);
+    if(el) el.style.transform=`translateX(${pan*panMult}px)`;
+  });
+  drawAct1Torches();
+  drawAct1FX();
+}
+
+function playEggScene(onComplete){
+  const scene      = qs('egg-scene');
+  const grandmaImg = qs('egg-grandma-img');
+  const playerHand = qs('egg-player-hand');
+  const grandmaHand= qs('egg-grandma-hand');
+  const eggItem    = qs('egg-item');
+
+  // 先把大娘图隐藏（她已经在s1-grandma-wrap里显示过了）
+  // 淡入整体场景（黑底）
+  scene.classList.add('active');
+
+  // t=0：主角的手从下方升起
+  setTimeout(()=>{
+    playerHand.classList.add('show');
+  }, 300);
+
+  // t=1.2s：大娘的手从上方降下（可见但未覆盖）
+  setTimeout(()=>{
+    grandmaHand.classList.add('show');
+  }, 1200);
+
+  // t=2.5s：大娘的手完全覆盖主角手
+  setTimeout(()=>{
+    grandmaHand.classList.add('cover');
+  }, 2500);
+
+  // t=4.0s：大娘的手缓缓向上挪开
+  setTimeout(()=>{
+    grandmaHand.classList.add('retract');
+    grandmaHand.classList.remove('cover');
+  }, 4000);
+
+  // t=4.8s：鸡蛋在主角手心显现
+  setTimeout(()=>{
+    eggItem.classList.add('show');
+  }, 4800);
+
+  // t=7.5s：淡出整个场景
+  setTimeout(()=>{
+    scene.style.transition='opacity 1.2s ease';
+    scene.style.opacity='0';
+  }, 7500);
+
+  // t=8.8s：重置清理，触发回调
+  setTimeout(()=>{
+    scene.classList.remove('active');
+    scene.style.cssText='';
+    [grandmaImg,playerHand,grandmaHand,eggItem].forEach(el=>{
+      if(el){el.className='';el.style.cssText='';}
+    });
+    if(onComplete) onComplete();
+  }, 8800);
+}
+
+/* ══════════════════════════════════════════════════════════
+
+   ██████  第二幕  ██████
+
+══════════════════════════════════════════════════════════ */
+let act2={
+  particles:[],mudStrokes:[],
+  bookShown:false,mudShown:false,commissarShown:false,
+  sub0:false,sub1:false,sub2:false,sub3:false,sub4:false,sub5:false,
+  isDrawing:false
+};
+
+function initAct2(){
+  act2={particles:[],mudStrokes:[],
+    bookShown:false,mudShown:false,commissarShown:false,
+    sub0:false,sub1:false,sub1b:false,sub1c:false,sub1d:false,sub1e:false,sub2:false,sub3:false,sub4:false,sub5:false,
+    isDrawing:false};
+
+  // 天空canvas
+  // 天空已由 act2_sky.png 提供，初始化动效canvas
+  const fc=qs('s2-firefly');if(fc){fc.width=W();fc.height=H();}
+  const sfx=qs('s2-sky-fx');if(sfx){sfx.width=W();sfx.height=H();}
+  // 初始化闪烁星星（更亮，更强闪烁）
+  act2._stars=Array.from({length:80},()=>({
+    x:Math.random()*W(),y:Math.random()*H()*0.48,
+    r:0.6+Math.random()*2.0,
+    ph:Math.random()*Math.PI*2,
+    sp:0.015+Math.random()*0.04, // 更快的闪烁速度
+    oMin:0.1+Math.random()*0.2,  // 最暗时
+    oMax:0.8+Math.random()*0.2,  // 最亮时
+  }));
+  // 初始化云朵
+  act2._clouds=[
+    {x:W()*0.1, y:H()*0.12, w:180, h:28, speed:0.12, o:0.06},
+    {x:W()*0.5, y:H()*0.08, w:240, h:35, speed:0.08, o:0.05},
+    {x:W()*0.8, y:H()*0.18, w:160, h:22, speed:0.10, o:0.07},
+  ];
+
+  // 泥地canvas
+  const mc=qs('act2-mud-canvas');mc.width=W();mc.height=H()*.35;
+
+  // 萤火虫粒子
+  const scEl=qs('scene-2');
+  scEl.addEventListener('mousemove',act2MouseMove);
+  scEl.addEventListener('touchmove',act2TouchMove,{passive:true});
+}
+
+class Firefly{
+  constructor(x,y){
+    this.x=x+(Math.random()-.5)*8;this.y=y+(Math.random()-.5)*8;
+    this.vx=(Math.random()-.5)*.4;this.vy=(Math.random()-.5)*.4;
+    this.life=1;this.maxLife=1;this.decay=.004+Math.random()*.006;
+    this.r=1.5+Math.random()*1.5;this.ph=Math.random()*Math.PI*2;
+  }
+  update(){
+    this.ph+=.06;this.x+=this.vx;this.y+=this.vy;
+    this.vx*=.99;this.vy*=.99;this.life-=this.decay;
+  }
+}
+
+function act2MouseMove(e){
+  if(phase!=='main'||currentAct!==2) return;
+  hideHint();
+  for(let i=0;i<3;i++) act2.particles.push(new Firefly(e.clientX,e.clientY));
+}
+function act2TouchMove(e){
+  if(phase!=='main'||currentAct!==2) return;
+  hideHint();
+  const t=e.touches[0];
+  for(let i=0;i<3;i++) act2.particles.push(new Firefly(t.clientX,t.clientY));
+}
+
+function updateAct2(progress,sy){
+  // 天空背景由 act2_sky.png 提供，叠加星星闪烁和云朵动效
+  const sfx=qs('s2-sky-fx');
+  if(sfx&&act2._stars){
+    const sctx=sfx.getContext('2d');
+    sctx.clearRect(0,0,sfx.width,sfx.height);
+    // 闪烁星星（呼吸感更强）
+    act2._stars.forEach(s=>{
+      s.ph+=s.sp;
+      const t=(Math.sin(s.ph)+1)/2; // 0~1
+      const a=s.oMin+t*(s.oMax-s.oMin);
+      const r=s.r*(0.7+0.3*t); // 亮时略大
+      sctx.beginPath();sctx.arc(s.x,s.y,r,0,Math.PI*2);
+      sctx.fillStyle=`rgba(255,255,255,${a})`;sctx.fill();
+      // 最亮的星加一点光晕
+      if(a>0.7){
+        const g=sctx.createRadialGradient(s.x,s.y,0,s.x,s.y,r*3);
+        g.addColorStop(0,`rgba(200,220,255,${(a-0.7)*0.5})`);
+        g.addColorStop(1,'rgba(200,220,255,0)');
+        sctx.fillStyle=g;
+        sctx.beginPath();sctx.arc(s.x,s.y,r*3,0,Math.PI*2);sctx.fill();
+      }
+    });
+    // 缓缓移动的云朵
+    if(act2._clouds){
+      act2._clouds.forEach(c=>{
+        c.x+=c.speed;
+        if(c.x>sfx.width+c.w) c.x=-c.w;
+        sctx.fillStyle=`rgba(180,210,240,${c.o})`;
+        sctx.beginPath();
+        sctx.ellipse(c.x,c.y,c.w,c.h,0,0,Math.PI*2);
+        sctx.fill();
+        sctx.beginPath();
+        sctx.ellipse(c.x+c.w*0.3,c.y-c.h*0.4,c.w*0.6,c.h*0.8,0,0,Math.PI*2);
+        sctx.fill();
+      });
+    }
+  }
+
+  parallax(2,sy);
+
+  // 萤火虫canvas
+  const sc=qs('s2-firefly');
+  if(sc){
+    const sctx=sc.getContext('2d');
+    sctx.clearRect(0,0,sc.width,sc.height);
+    if(Math.random()<.04){
+      const bx=Math.random()*sc.width;
+      const by=sc.height*.8+Math.random()*sc.height*.15;
+      sctx.beginPath();sctx.arc(bx,by,2+Math.random()*3,0,Math.PI*2);
+      sctx.strokeStyle='rgba(100,130,60,.25)';sctx.stroke();
+    }
+  }
+
+  // 萤火虫
+  const ssc=qs('s2-firefly');
+  if(ssc){
+    const sctx=ssc.getContext('2d');
+    act2.particles=act2.particles.filter(p=>{
+      p.update();if(p.life<=0) return false;
+      const alpha=p.life*(0.6+0.4*Math.sin(p.ph));
+      const gg=sctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*5);
+      gg.addColorStop(0,`rgba(180,220,60,${alpha*.9})`);
+      gg.addColorStop(1,'rgba(100,180,20,0)');
+      sctx.fillStyle=gg;sctx.beginPath();sctx.arc(p.x,p.y,p.r*5,0,Math.PI*2);sctx.fill();
+      sctx.fillStyle=`rgba(220,255,100,${alpha})`;
+      sctx.beginPath();sctx.arc(p.x,p.y,p.r,0,Math.PI*2);sctx.fill();
+      return true;
+    });
+  }
+
+  // 进度节点
+  if(progress>.04&&!act2.sub0){act2.sub0=true;
+    showSub('白天是毒蛇和泥沼，夜里是脚底的血泡。','narrate');}
+  if(progress>.20&&!act2.sub1){act2.sub1=true;
+    showSub('草鞋烂了，就用破布裹着脚走。','narrate');}
+  if(progress>.38&&!act2.bookShown){
+    act2.bookShown=true;
+    qs('act2-book').classList.add('show');
+    setTimeout(()=>showSub('夜里躺在地上，政委教我认字。','narrate'),500);
+  }
+  if(progress>.50&&!act2.mudShown){
+    act2.mudShown=true;
+    qs('act2-mud-canvas').classList.add('show');
+    showSub('战友们躺在一起，也像一个个「人」字。','narrate');
+  }
+  if(progress>.62&&!act2.commissarShown){
+    act2.commissarShown=true;
+    qs('act2-commissar-wrap').classList.add('show');
+    setTimeout(()=>{
+      qs('act2-commissar-dialog').classList.add('show');
+      showSub('人字两笔，互相撑着。你撑我，我撑你，就是一群人。','npc','政委');
+    },600);
+  }
+  if(progress>.78&&!act2.sub4){
+    act2.sub4=true;
+    showSub('聚是一把火，散是满天星。','narrate');
+  }
+  if(progress>.84&&!act2.sub5){
+    act2.sub5=true;
+    showSub('我们这么小的人，连起来，能走出这片海。','narrate');
+    // 独白结束后政委和课本同步渐隐
+    setTimeout(()=>{
+      qs('act2-book').classList.remove('show');
+      qs('act2-commissar-wrap').classList.remove('show');
+      qs('act2-commissar-dialog').classList.remove('show');
+    },2000);
+  }
+  if(progress>.95) switchToAct(3);
+}
+
+/* ── 第三幕：老兵出场（诗念完后调用） ── */
+function act3_showOldman(){
+  if(act3.oldmanShown) return;
+  act3.oldmanShown=true;
+
+  // 1. 老兵渐显
+  qs('act3-oldman-wrap').classList.add('show');
+
+  // 2. 800ms后老兵对话框：「小鬼，想家了吧？」
+  setTimeout(()=>{
+    qs('act3-oldman-text').textContent='小鬼，想家了吧？';
+    qs('act3-oldman-dialog').classList.add('show');
+    showSub('小鬼，想家了吧？','npc','老兵');
+  },800);
+
+  // 3. 2.8s后老兵对话框隐去，主角对话框显示「……没有。」
+  setTimeout(()=>{
+    qs('act3-oldman-dialog').classList.remove('show');
+    setTimeout(()=>{
+      showPlayerDialog('……没有。');
+      showSub('……没有。','npc','你'); // 旁白条同步显示（可选，保持节奏感）
+      setTimeout(()=>playTearDrop(),400);
+      // 2s后主角对话框隐去
+      setTimeout(()=>hidePlayerDialog(), 2000);
+    },400);
+  },2800);
+
+  // 4. 5.5s后老兵第二句
+  setTimeout(()=>{
+    qs('act3-oldman-text').textContent='我也想家。等打跑了敌人，我们一起回家。';
+    qs('act3-oldman-dialog').classList.add('show');
+    showSub('我也想家。等打跑了敌人，我们一起回家。','npc','老兵');
+  },5500);
+
+  // 5. 9.5s后全部渐隐
+  setTimeout(()=>{
+    qs('act3-book').classList.remove('show');
+    qs('act3-oldman-wrap').classList.remove('show');
+    qs('act3-oldman-dialog').classList.remove('show');
+    qs('act3-tear-canvas').classList.remove('show');
+    hidePlayerDialog();
+  },9500);
+}
+
+/* ── 泪滴动画（第三幕：主角说「没有」时触发） ── */
+function playTearDrop(){
+  const tc2=qs('act3-tear-canvas');
+  if(!tc2||act3.tearDropped) return;
+  act3.tearDropped=true;
+  // 定位到课本右侧区域
+  tc2.style.right='calc(6vw + 160px)';
+  tc2.style.top=(H()/2+10)+'px';
+  tc2.classList.add('show');
+  const tctx=tc2.getContext('2d');
+  // 阶段1：泪珠下落
+  let phase=0,y=0,rippleR=0,rippleAlpha=1;
+  function frame(){
+    tctx.clearRect(0,0,60,60);
+    if(phase===0){
+      // 泪珠
+      y+=1.5;
+      tctx.fillStyle='rgba(160,200,240,.85)';
+      tctx.beginPath();
+      tctx.arc(30,10+y,4,0,Math.PI*2);
+      tctx.fill();
+      if(y>=18){ phase=1; }
+    } else {
+      // 涟漪扩散
+      rippleR+=1.2;rippleAlpha-=.025;
+      if(rippleAlpha<=0){
+        // 留下水迹
+        tctx.fillStyle='rgba(160,200,240,.15)';
+        tctx.beginPath();tctx.ellipse(30,29,6,3,0,0,Math.PI*2);tctx.fill();
+        return;
+      }
+      tctx.beginPath();
+      tctx.ellipse(30,29,rippleR,rippleR*.35,0,0,Math.PI*2);
+      tctx.strokeStyle=`rgba(160,200,240,${rippleAlpha*.6})`;
+      tctx.lineWidth=1.2;tctx.stroke();
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ══════════════════════════════════════════════════════════
+
+   ██████  第三幕  ██████
+
+══════════════════════════════════════════════════════════ */
+let act3={
+  ripples:[],fish:[],moonShatter:false,moonPieces:[],
+  moonRestored:false,bookShown:false,oldmanShown:false,tearDropped:false,
+  sub0:false,sub1:false,sub2:false,sub3:false,sub4:false,
+  canSwitch:false,interacting:false
+};
+
+function initAct3(){
+  act3={ripples:[],fish:[],moonShatter:false,moonPieces:[],
+    moonRestored:false,bookShown:false,oldmanShown:false,tearDropped:false,
+    sub0:false,sub1:false,sub2:false,sub3:false,sub4:false,
+    canSwitch:false,interacting:false};
+
+  // 天空、月亮、树林、河面均由PNG提供
+  const skyC=qs('s3-sky'); // img元素，不需要设置canvas尺寸
+  // 初始化鱼群canvas
+  const fc=qs('s3-fish');if(fc){fc.width=W();fc.height=H();}
+
+  // 月亮由 act3_moon.png 提供，无需canvas绘制
+
+  // 鱼群
+  act3.fish=Array.from({length:12},()=>({
+    x:Math.random()*W(),y:H()*.75+Math.random()*H()*.15,
+    vx:(Math.random()-.5)*.8,vy:(Math.random()-.5)*.2,
+    size:4+Math.random()*6,phase:Math.random()*Math.PI*2
+  }));
+
+  // 月亮倒影碎片初始化（等待触发）
+  act3.moonPieces=Array.from({length:14},(_,i)=>{
+    const angle=i/14*Math.PI*2;
+    return{
+      x:W()*.5+Math.cos(angle)*20,y:H()*.75+Math.sin(angle)*10,
+      vx:Math.cos(angle)*(1+Math.random()*2),vy:Math.sin(angle)*(1+Math.random()),
+      r:8+Math.random()*14,alpha:0,born:false
+    };
+  });
+
+  const rc=qs('s3-fish');if(rc){rc.width=W();rc.height=H();}
+  const rpc=qs('s3-ripple');if(rpc){rpc.width=W();rpc.height=H();}
+
+  // 水面波纹系统
+  act3._ripples=[];      // 用户触发的扩散波纹
+  act3._waveTime=0;      // 自然波纹时间计数
+  act3._flowOffset=0;    // 水面流动偏移
+
+  // 鼠标/触摸划过水面时产生波纹
+  const scEl=qs('scene-3');
+  scEl.addEventListener('pointermove',e=>{
+    if(phase!=='main'||currentAct!==3) return;
+    const riverTop=H()*0.52; // 河面大约从屏幕52%开始
+    if(e.clientY>riverTop){
+      // 在划过的位置添加波纹
+      if(Math.random()<0.35){
+        act3._ripples.push({
+          x:e.clientX, y:e.clientY,
+          r:0, maxR:80+Math.random()*60,
+          life:1, speed:1.2+Math.random()*0.8
+        });
+      }
+    }
+  });
+  scEl.addEventListener('touchmove',e=>{
+    if(phase!=='main'||currentAct!==3) return;
+    const t=e.touches[0];
+    if(t.clientY>H()*0.52&&Math.random()<0.35){
+      act3._ripples.push({
+        x:t.clientX,y:t.clientY,
+        r:0,maxR:80+Math.random()*60,
+        life:1,speed:1.2+Math.random()*0.8
+      });
+    }
+  },{passive:true});
+
+  const scEl2=qs('scene-3');
+  scEl2.addEventListener('mousemove',act3MouseMove);
+  scEl2.addEventListener('touchmove',act3TouchMove,{passive:true});
+}
+
+class Ripple{
+  constructor(x,y){
+    this.x=x;this.y=y;this.r=0;this.maxR=80+Math.random()*40;
+    this.life=1;this.decay=.012;
+  }
+  update(){this.r+=2;this.life-=this.decay;}
+}
+
+class Fish{
+  constructor(x,y){
+    this.x=x;this.y=y;this.tx=W()*.5;this.ty=H()*.75;
+    this.vx=0;this.vy=0;this.size=4+Math.random()*5;
+    this.phase=Math.random()*Math.PI*2;this.toMoon=false;
+  }
+}
+
+function act3MouseMove(e){
+  if(phase!=='main'||currentAct!==3) return;
+  hideHint();act3.interacting=true;
+  if(e.clientY>H()*.55) act3.ripples.push(new Ripple(e.clientX,e.clientY));
+  act3.fish.forEach(f=>{
+    const dx=f.x-e.clientX,dy=f.y-e.clientY,d=Math.sqrt(dx*dx+dy*dy);
+    if(d<120){f.vx+=dx/d*.5;f.vy+=dy/d*.3;f.toMoon=true;}
+  });
+}
+function act3TouchMove(e){
+  const t=e.touches[0];
+  act3MouseMove({clientX:t.clientX,clientY:t.clientY});
+}
+
+function updateAct3(progress,sy){
+  // 天空、月亮、树林、河面均由PNG提供，无需canvas绘制
+
+  parallax(3,sy);
+  // 月亮和树林视差极小，保持画面稳定
+  const moonEl=qs('s3-moon');
+  if(moonEl) moonEl.style.transform=`translateY(${-sy*0.01}px)`;
+  const treesEl=qs('s3-trees');
+  if(treesEl) treesEl.style.transform=`translateY(${-sy*0.02}px)`;
+  // 河面完全不动
+  const riverEl=qs('s3-river');
+  if(riverEl) riverEl.style.transform='translateY(0)';
+
+  // ── 水面波纹绘制 ──
+  const rpc=qs('s3-ripple');
+  if(rpc&&act3._ripples!==undefined){
+    const rctx2=rpc.getContext('2d');
+    rctx2.clearRect(0,0,rpc.width,rpc.height);
+
+    act3._waveTime+=0.018;
+    act3._flowOffset=(act3._flowOffset+0.4)%rpc.width;
+
+    const riverTop=rpc.height*0.52;
+    const moonX=rpc.width*0.5;
+    const moonReflectY=rpc.height*0.72; // 月亮倒影中心Y
+
+    // 月亮倒影荡漾（竖向正弦扭动光柱）
+    for(let i=0;i<10;i++){
+      const py=moonReflectY+i*14;
+      if(py>rpc.height) break;
+      const wobble=Math.sin(act3._waveTime*1.2+i*0.6)*6;
+      const w=Math.max(2,22-i*2);
+      const alpha=Math.max(0,0.12-i*0.01)*(0.7+0.3*Math.sin(act3._waveTime+i*0.4));
+      rctx2.fillStyle=`rgba(255,240,180,${alpha})`;
+      rctx2.fillRect(moonX+wobble-w/2, py, w, 11);
+    }
+
+    // 水面横向流动光纹
+    rctx2.strokeStyle='rgba(150,180,220,0.04)';
+    rctx2.lineWidth=1;
+    for(let i=0;i<8;i++){
+      const y=riverTop+40+i*28;
+      const xOff=(act3._flowOffset+i*80)%rpc.width;
+      rctx2.beginPath();
+      rctx2.moveTo(xOff-rpc.width, y+Math.sin(act3._waveTime+i)*3);
+      rctx2.lineTo(xOff, y+Math.sin(act3._waveTime+i+1)*3);
+      rctx2.stroke();
+    }
+
+    // 用户触发的扩散波纹
+    act3._ripples=act3._ripples.filter(rp=>{
+      rp.r+=rp.speed;
+      rp.life=1-rp.r/rp.maxR;
+      if(rp.life<=0) return false;
+      rctx2.beginPath();
+      rctx2.ellipse(rp.x,rp.y, rp.r, rp.r*0.3, 0, 0, Math.PI*2);
+      rctx2.strokeStyle=`rgba(180,210,240,${rp.life*0.25})`;
+      rctx2.lineWidth=1.5;
+      rctx2.stroke();
+      // 波纹经过月亮倒影区域时加强亮度
+      const distToMoon=Math.abs(rp.x-moonX);
+      if(distToMoon<60){
+        rctx2.strokeStyle=`rgba(255,240,180,${rp.life*0.15})`;
+        rctx2.beginPath();
+        rctx2.ellipse(rp.x,rp.y,rp.r*0.6,rp.r*0.18,0,0,Math.PI*2);
+        rctx2.stroke();
+      }
+      return true;
+    });
+
+    // 自然随机小波纹（模拟微风）
+    if(Math.random()<0.04){
+      const rx=rpc.width*0.2+Math.random()*rpc.width*0.6;
+      const ry=riverTop+Math.random()*(rpc.height-riverTop)*0.8;
+      act3._ripples.push({x:rx,y:ry,r:0,maxR:30+Math.random()*20,life:1,speed:0.5});
+    }
+  }
+
+  // 鱼群和河面特效绘制在 s3-fish canvas 上（s3-river 已是PNG图片）
+  const rc=qs('s3-fish');
+  if(rc){
+    const rctx=rc.getContext('2d');
+    rctx.clearRect(0,0,rc.width,rc.height);
+    // 河面由 act3_river.png 提供，不再绘制基底色块
+
+    // 月亮倒影
+    const mx=W()*.5,my=H()*.76;
+    if(!act3.moonShatter){
+      const mg=rctx.createRadialGradient(mx,my,0,mx,my,30);
+      mg.addColorStop(0,'rgba(200,220,190,.22)');mg.addColorStop(1,'rgba(150,180,140,0)');
+      rctx.fillStyle=mg;rctx.beginPath();rctx.ellipse(mx,my,14,36,0,0,Math.PI*2);rctx.fill();
+    }
+
+    // 波纹
+    act3.ripples=act3.ripples.filter(r=>{
+      r.update();if(r.life<=0) return false;
+      rctx.beginPath();rctx.ellipse(r.x,r.y,r.r,r.r*.3,0,0,Math.PI*2);
+      rctx.strokeStyle=`rgba(150,180,220,${r.life*.2})`;rctx.lineWidth=1;rctx.stroke();
+      return true;
+    });
+
+    // 月亮倒影破碎
+    if(act3.moonShatter&&!act3.moonRestored){
+      let allStop=true;
+      act3.moonPieces.forEach(p=>{
+        p.x+=p.vx;p.y+=p.vy;p.vx*=.97;p.vy*=.97;
+        if(Math.abs(p.vx)>.01||Math.abs(p.vy)>.01) allStop=false;
+        if(p.born) p.alpha=Math.min(1,p.alpha+.04);
+        rctx.globalAlpha=p.alpha*.6;
+        rctx.fillStyle='rgba(200,220,190,1)';
+        rctx.beginPath();rctx.ellipse(p.x,p.y,p.r*.5,p.r*.2,Math.random()*.5,0,Math.PI*2);rctx.fill();
+      });
+      rctx.globalAlpha=1;
+      if(allStop) act3.moonRestored=true;
+    }
+
+    // 鱼群
+    act3.fish.forEach(f=>{
+      f.phase+=.08;
+      if(f.toMoon){
+        const dx=mx-f.x,dy=(H()*.76)-f.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d>30){f.vx+=dx/d*.06;f.vy+=dy/d*.04;}
+        else{
+          // 鱼触碰月亮倒影→破碎
+          if(!act3.moonShatter){
+            act3.moonShatter=true;
+            act3.moonPieces.forEach(p=>{p.born=true;});
+          }
+          f.vx*=.98;f.vy*=.98;
+        }
+      }
+      f.vx*=.99;f.vy*=.99;
+      f.x+=f.vx;f.y+=f.vy;
+      if(f.x<0)f.x=W();if(f.x>W())f.x=0;
+      const tail=Math.sin(f.phase)*f.size*.4;
+      const fishAngle=Math.atan2(f.vy,f.vx);
+      // 发光光晕
+      const glow=rctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.size*2.5);
+      glow.addColorStop(0,'rgba(160,210,255,0.28)');
+      glow.addColorStop(1,'rgba(100,160,255,0)');
+      rctx.fillStyle=glow;
+      rctx.beginPath();rctx.arc(f.x,f.y,f.size*2.5,0,Math.PI*2);rctx.fill();
+      // 鱼身
+      rctx.fillStyle='rgba(180,220,255,.85)';
+      rctx.beginPath();
+      rctx.ellipse(f.x,f.y,f.size,f.size*.35,fishAngle,0,Math.PI*2);rctx.fill();
+      // 鱼尾
+      rctx.fillStyle='rgba(140,190,240,.7)';
+      rctx.beginPath();
+      const angle=fishAngle+Math.PI;
+      rctx.moveTo(f.x+Math.cos(angle)*f.size,f.y+Math.sin(angle)*f.size);
+      rctx.lineTo(f.x+Math.cos(angle+.4)*f.size*1.4+tail,f.y+Math.sin(angle+.4)*f.size*1.4);
+      rctx.lineTo(f.x+Math.cos(angle-.4)*f.size*1.4-tail,f.y+Math.sin(angle-.4)*f.size*1.4);
+      rctx.closePath();rctx.fill();
+      // 鱼身高光
+      rctx.fillStyle='rgba(220,240,255,0.5)';
+      rctx.beginPath();
+      rctx.ellipse(f.x-Math.cos(fishAngle)*f.size*.2,
+                   f.y-Math.sin(fishAngle)*f.size*.2,
+                   f.size*.4,f.size*.15,fishAngle,0,Math.PI*2);
+      rctx.fill();
+    });
+  }
+
+  // 进度节点
+  if(progress>.04&&!act3.sub0){act3.sub0=true;
+    showSub('衣服湿了又干，干了又湿。','narrate');}
+  if(progress>.20&&!act3.sub1){act3.sub1=true;
+    showSub('不知道为何来回走。','narrate');}
+  if(progress>.45&&!act3.bookShown){
+    act3.bookShown=true;
+    qs('act3-book').classList.add('show');
+    // 主角逐句朗读，走主角对话框（蓝色横条）
+    const poemLines=[
+      {txt:'床前明月光，',        delay:0},
+      {txt:'疑是地上霜。',        delay:1200},
+      {txt:'举头望明月，',        delay:2400},
+      {txt:'低头……',             delay:3600},
+    ];
+    poemLines.forEach(({txt,delay})=>{
+      setTimeout(()=>{
+        showPlayerDialog(txt);
+      },delay);
+    });
+    // 「低头……」停顿后隐藏对话框，1.5s后老兵出场
+    setTimeout(()=>{
+      hidePlayerDialog();
+      setTimeout(()=>act3_showOldman(), 1500);
+    }, 3600+1800);
+  }
+  if(progress>.78&&!act3.sub2){act3.sub2=true;
+    showSub('我不知道为啥要渡河、还要渡几次河，','narrate');}
+  if(progress>.88&&!act3.sub3){act3.sub3=true;
+    showSub('但我知道，河对岸有我们要去的地方。','narrate');
+    setTimeout(()=>{ act3.canSwitch=true; },2500);
+  }
+  if(progress>.95&&act3.canSwitch) switchToAct(4);
+}
+
+/* ══════════════════════════════════════════════════════════
+
+   ██████  第四幕  ██████
+
+══════════════════════════════════════════════════════════ */
+let act4={
+  smokeParticles:[],bulletTrails:[],relicShown:false,
+  flashTimer:null,
+  swipeStartX:null,swipeDist:0,swipeProgress:0,
+  canSwitch:false,
+  sub0:false,sub1:false,sub3:false,sub4:false,sub5:false
+};
+
+function initAct4(){
+  // 防御：如果上次handlers未清除（比如从其他幕跳回），先强制移除
+  if(act4._handlers){
+    const h=act4._handlers;
+    document.removeEventListener('mousedown', h.onMouseDown);
+    document.removeEventListener('mousemove', h.onMouseMove);
+    document.removeEventListener('mouseup',   h.onMouseUp);
+    document.removeEventListener('touchstart',h.onTouchStart);
+    document.removeEventListener('touchmove', h.onTouchMove);
+    document.removeEventListener('touchend',  h.onTouchEnd);
+  }
+  // 确保遗物完全隐藏并重置opacity
+  const relicEl=qs('act4-relic');
+  relicEl.classList.remove('show');
+  relicEl.style.opacity='0';
+
+  act4={smokeParticles:[],bulletTrails:[],relicShown:false,
+    flashTimer:null,_handlers:null,
+    swipeStartX:null,swipeDist:0,swipeProgress:0,
+    canSwitch:false,
+    sub0:false,sub1:false,sub3:false,sub4:false,sub5:false};
+
+  // 确保滚动位置归零（防止上一幕残留）
+  targetScrollY=0;scrollY=0;
+
+  const skyC=qs('s4-sky');skyC.width=W();skyC.height=H();
+  const sc=qs('s4-smoke');sc.width=W();sc.height=H();
+  const fx=qs('s4-fx');fx.width=W();fx.height=H();
+
+  // 间歇炮火闪光（烟雾未散时）
+  act4.flashTimer=setInterval(()=>{
+    if(currentAct!==4) return;
+    if(act4.swipeProgress>.5) return;
+    const fl=qs('act4-flash');
+    fl.style.opacity='.18';
+    setTimeout(()=>{fl.style.opacity='0';},80);
+  },2200);
+
+  // 左右滑动事件 — 绑定在document上，确保能接收到事件
+  function onMouseDown(e){
+    if(phase!=='main'||currentAct!==4) return;
+    act4.swipeStartX=e.clientX;
+  }
+  function onMouseMove(e){
+    if(currentAct!==4||act4.swipeStartX===null||act4.swipeProgress>=1) return;
+    const dx=Math.abs(e.clientX-act4.swipeStartX);
+    act4.swipeDist=Math.max(act4.swipeDist,dx);
+    act4.swipeProgress=Math.min(1, act4.swipeDist/(W()*0.5));
+  }
+  function onMouseUp(){ act4.swipeStartX=null; }
+  function onTouchStart(e){
+    if(phase!=='main'||currentAct!==4) return;
+    act4.swipeStartX=e.touches[0].clientX;
+  }
+  function onTouchMove(e){
+    if(currentAct!==4||act4.swipeStartX===null||act4.swipeProgress>=1) return;
+    const dx=Math.abs(e.touches[0].clientX-act4.swipeStartX);
+    act4.swipeDist=Math.max(act4.swipeDist,dx);
+    act4.swipeProgress=Math.min(1, act4.swipeDist/(W()*0.5));
+  }
+  function onTouchEnd(){ act4.swipeStartX=null; }
+
+  document.addEventListener('mousedown', onMouseDown);
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup',   onMouseUp);
+  document.addEventListener('touchstart',onTouchStart,{passive:true});
+  document.addEventListener('touchmove', onTouchMove, {passive:true});
+  document.addEventListener('touchend',  onTouchEnd,  {passive:true});
+
+  // 保存引用，便于cleanup时移除
+  act4._handlers={onMouseDown,onMouseMove,onMouseUp,onTouchStart,onTouchMove,onTouchEnd};
+}
+
+function act4_onSwipeDone(){
+  if(act4.relicShown) return;
+  act4.relicShown=true;
+  // 1. 隐藏滑动提示，还原icon
+  hideHint();
+  qs('hint-icon').classList.remove('swipe-hint');
+  // 2. 遗物渐显
+  act4_showRelic();
+  // 3. 延迟后提示继续下滑
+  setTimeout(()=>{
+    setHint('↓ 继续下滑');
+    qs('hint-icon').classList.remove('swipe-hint');
+  },1600);
+}
+
+function act4_showRelic(){
+  const el=qs('act4-relic');
+  el.classList.add('show');
+  el.style.opacity='1';
+}
+
+class SmokeParticle{
+  constructor(){
+    this.x=Math.random()*W();
+    this.y=Math.random()*H();          // 全屏分布，更厚重
+    this.r=40+Math.random()*80;        // 更大的粒子
+    this.vx=(Math.random()-.5)*.4;
+    this.vy=-(0.1+Math.random()*.25);
+    this.life=1;this.decay=.0008+Math.random()*.002; // 生命更长
+    this.alpha=0.10+Math.random()*.18; // 更高透明度
+  }
+  update(){this.x+=this.vx;this.y+=this.vy;this.r+=.3;this.life-=this.decay;}
+}
+
+function updateAct4(progress,sy){
+  parallax(4,sy);
+
+  const lp=act4.swipeProgress;
+
+  // 每帧检测滑动完成（不依赖事件回调）
+  if(lp>=1&&!act4.relicShown) act4_onSwipeDone();
+
+  // 硝烟粒子（更密更厚）
+  const sc=qs('s4-smoke');
+  if(sc){
+    const sctx=sc.getContext('2d');
+    sctx.clearRect(0,0,sc.width,sc.height);
+    // 生成速率大幅提升，上限120个
+    if(act4.smokeParticles.length<120 && Math.random()<.25*(1-lp))
+      act4.smokeParticles.push(new SmokeParticle());
+    act4.smokeParticles=act4.smokeParticles.filter(p=>{
+      p.update();if(p.life<=0) return false;
+      const a=p.alpha*p.life*(1-lp*0.9);
+      // 烟雾颜色：深灰夹杂暗橙，模拟战场硝烟
+      const warm=Math.random()>.6;
+      sctx.fillStyle=warm
+        ?`rgba(160,100,60,${a})`
+        :`rgba(140,135,130,${a})`;
+      sctx.beginPath();sctx.arc(p.x,p.y,p.r,0,Math.PI*2);sctx.fill();
+      return true;
+    });
+  }
+
+  // 子弹轨迹（硝烟未散时）
+  const fx=qs('s4-fx');
+  if(fx){
+    const fctx=fx.getContext('2d');
+    fctx.clearRect(0,0,fx.width,fx.height);
+    if(Math.random()<.05*(1-lp)){
+      const y=H()*.1+Math.random()*H()*.6;
+      const fromLeft=Math.random()>.5;
+      fctx.strokeStyle=`rgba(255,255,200,${.15*(1-lp)})`;
+      fctx.lineWidth=.8;fctx.setLineDash([6,8]);
+      fctx.beginPath();
+      fctx.moveTo(fromLeft?0:fx.width,y);
+      fctx.lineTo(fromLeft?Math.random()*fx.width*.6:fx.width-Math.random()*fx.width*.6,y);
+      fctx.stroke();fctx.setLineDash([]);
+    }
+  }
+
+  // 进度节点字幕
+  if(progress>.04&&!act4.sub0){act4.sub0=true;
+    showSub('冲锋号震得耳朵疼，子弹擦着耳边飞。','narrate');}
+  if(progress>.22&&!act4.sub1){act4.sub1=true;
+    showSub('身边的李狗蛋突然不说话了。','narrate');
+    setTimeout(()=>{
+      setHint('← 左右滑动屏幕，让硝烟散去 →');
+      qs('hint-icon').classList.add('swipe-hint');
+    },1200);
+  }
+  if(act4.relicShown&&progress>.45&&!act4.sub3){act4.sub3=true;
+    showSub('他叫李狗蛋，湖南人，会唱山歌。','narrate');}
+  if(act4.relicShown&&progress>.65&&!act4.sub4){act4.sub4=true;
+    showPlayerDialog('狗蛋，你还没教我唱完那支山歌呢。');
+    setTimeout(()=>hidePlayerDialog(),3500);}
+  if(act4.relicShown&&progress>.88&&!act4.sub5){act4.sub5=true;
+    showSub('他还没教我唱完那首歌。但我会替他唱下去。唱给每一个活着的人听。','narrate');
+    setTimeout(()=>{ act4.canSwitch=true; },2500);
+  }
+  if(progress>.95&&act4.canSwitch){
+    const r=qs('act4-relic');
+    r.style.transition='none';
+    r.style.opacity='0';
+    switchToAct(5);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+
+   ██████  第五幕  ██████  飞夺泸定桥
+
+══════════════════════════════════════════════════════════ */
+let act5={
+  torchLit:0,sparks:[],_boards:[],
+  flashbackDone:false,shoutDone:false,
+  panOffset:0,panMax:0,
+  povShown:false,shakeExtra:false,fadeStarted:false,canSwitch:false,
+  sub0:false,sub1:false,sub2:false,sub3:false,sub4:false
+};
+
+let act5PointerDown=false;
+let act5SwipeX=-1;
+let act5SwipeTotalDx=0;
+
+function initAct5(){
+  act5PointerDown=false;
+  act5SwipeX=-1;
+  act5SwipeTotalDx=0;
+  act5={torchLit:0,sparks:[],_boards:[],
+    flashbackDone:false,shoutDone:false,
+    panOffset:0,panMax:0,
+    povShown:false,shakeExtra:false,fadeStarted:false,canSwitch:false,
+    sub0:false,sub1:false,sub2:false,sub3:false,sub4:false};
+
+  // 初始化canvas尺寸
+  const bdc=qs('s5-board-canvas');if(bdc){bdc.width=W();bdc.height=H();}
+  const fxc=qs('s5-fx-canvas');if(fxc){fxc.width=W();fxc.height=H();}
+  const tc=qs('s5-torch-canvas');if(tc){tc.width=W();tc.height=H();}
+  const sc=qs('s5-sparks');if(sc){sc.width=W();sc.height=H();}
+  // 重置pov和fadeout
+  const pov=qs('act5-pov');if(pov){pov.classList.remove('show');}
+  const fo=qs('act5-fadeout');if(fo){fo.style.transition='none';fo.style.opacity='0';}
+
+  // 计算全景最大偏移（等图片加载后）
+  const skyImg=qs('s5-sky-img');
+  function calcPanMax(){
+    const imgW=skyImg.naturalWidth*(H()/skyImg.naturalHeight);
+    act5.panMax=Math.max(0, imgW-W());
+  }
+  if(skyImg.complete&&skyImg.naturalWidth>0) calcPanMax();
+  else skyImg.addEventListener('load',calcPanMax,{once:true});
+
+  // 全景滑动事件（绑定document，和第四幕一致）
+  function onPD(e){
+    if(phase!=='main'||currentAct!==5) return;
+    act5PointerDown=true;
+    act5SwipeX=e.clientX??e.touches?.[0]?.clientX??0;
+  }
+  function onPM(e){
+    if(!act5PointerDown||phase!=='main'||currentAct!==5) return;
+    const cx=e.clientX??e.touches?.[0]?.clientX??0;
+    const dx=cx-act5SwipeX;
+    act5SwipeX=cx;
+    if(dx>0){
+      // 向右滑动：推进全景 + 点亮火把
+      act5.panOffset=Math.min(act5.panMax, act5.panOffset+dx);
+      act5SwipeTotalDx+=dx;
+      const earned=Math.floor(act5SwipeTotalDx/60);
+      if(earned>0){
+        act5SwipeTotalDx-=earned*60;
+        const newLit=Math.min(13,act5.torchLit+earned);
+        if(newLit>act5.torchLit){act5.torchLit=newLit;hideHint();}
+      }
+    }
+    // 火花粒子跟随手指
+    if(Math.random()<.4) act5.sparks.push({
+      x:cx,y:H()*.52+Math.random()*60,
+      vx:(Math.random()-.3)*3,vy:-(1+Math.random()*2),
+      life:1,r:2+Math.random()*2
+    });
+  }
+  function onPU(){ act5PointerDown=false; }
+
+  document.addEventListener('mousedown',onPD);
+  document.addEventListener('mousemove',onPM);
+  document.addEventListener('mouseup',onPU);
+  document.addEventListener('touchstart',onPD,{passive:true});
+  document.addEventListener('touchmove',onPM,{passive:true});
+  document.addEventListener('touchend',onPU,{passive:true});
+  act5._handlers={onPD,onPM,onPU};
+}
+
+function updateAct5(progress,sy){
+  // 全景偏移
+  const pan=act5.panOffset;
+  const panorama=qs('s5-panorama');
+  if(panorama) panorama.style.transform=`translateX(${-pan}px)`;
+
+  // 桥面垂直位置（用于木板和水雾定位）
+  const bridgeY=H()*0.54;
+
+  // ── 木板掉落canvas（在桥PNG下方，从桥面往下掉） ──
+  const bc=qs('s5-board-canvas');
+  if(bc){
+    if(bc.width!==W()||bc.height!==H()){bc.width=W();bc.height=H();}
+    const bctx=bc.getContext('2d');
+    bctx.clearRect(0,0,bc.width,bc.height);
+    if(!act5._boards) act5._boards=[];
+    // 生成：从桥面Y坐标往下，不叠在桥上
+    if(Math.random()<.025){
+      act5._boards.push({
+        x:W()*.2+Math.random()*W()*.6,
+        y:bridgeY+5,          // 从桥面正下方开始
+        vx:(Math.random()-.5)*.8,
+        vy:1.2+Math.random()*1.5,
+        rot:Math.random()*Math.PI*2,
+        vrot:(Math.random()-.5)*.06,
+        w:12+Math.random()*16, // 更小
+        h:3+Math.random()*3,   // 更薄
+        life:1
+      });
+    }
+    act5._boards=act5._boards.filter(b=>{
+      b.x+=b.vx;b.y+=b.vy;b.rot+=b.vrot;b.life-=.006;
+      if(b.life<=0||b.y>H()) return false;
+      // 只在桥面下方绘制
+      if(b.y<bridgeY) return true;
+      bctx.save();
+      bctx.globalAlpha=b.life*.75;
+      bctx.translate(b.x,b.y);bctx.rotate(b.rot);
+      bctx.fillStyle='#6a4020';
+      bctx.fillRect(-b.w/2,-b.h/2,b.w,b.h);
+      bctx.restore();
+      return true;
+    });
+  }
+
+  // ── 动效canvas：水雾+浪花（加强版） ──
+  const fxc=qs('s5-fx-canvas');
+  if(fxc){
+    if(fxc.width!==W()||fxc.height!==H()){fxc.width=W();fxc.height=H();}
+    const fx=fxc.getContext('2d');
+    fx.clearRect(0,0,fxc.width,fxc.height);
+    const t=Date.now()*.001;
+
+    // 水雾（加强：更多、更大、更明显）
+    for(let i=0;i<10;i++){
+      const mx=(Math.sin(t*.25+i*0.9)*.5+.5)*fxc.width;
+      const my=H()*.72+Math.sin(t*.4+i)*.03*H();
+      const radius=180+Math.sin(t*.3+i)*40;
+      const alpha=0.12+0.06*Math.sin(t*.5+i);
+      const rg=fx.createRadialGradient(mx,my,0,mx,my,radius);
+      rg.addColorStop(0,`rgba(255,255,255,${alpha})`);
+      rg.addColorStop(.5,`rgba(220,235,255,${alpha*.5})`);
+      rg.addColorStop(1,'rgba(255,255,255,0)');
+      fx.fillStyle=rg;
+      fx.beginPath();fx.ellipse(mx,my,radius*1.4,radius*.55,0,0,Math.PI*2);fx.fill();
+    }
+    // 水雾底部浓雾层
+    const fogGrad=fx.createLinearGradient(0,H()*.75,0,H());
+    fogGrad.addColorStop(0,'rgba(200,220,240,0)');
+    fogGrad.addColorStop(.4,`rgba(200,220,240,${0.10+0.04*Math.sin(t*.3)})`);
+    fogGrad.addColorStop(1,'rgba(200,220,240,0.18)');
+    fx.fillStyle=fogGrad;
+    fx.fillRect(0,H()*.75,fxc.width,H()*.25);
+
+    // 浪花扰动（加强：更多波纹、更高透明度、更大振幅）
+    for(let i=0;i<8;i++){
+      const wy=H()*.65+i*14+Math.sin(t*.7+i)*8;
+      const wOff=(t*.5+i*.25)%1;
+      const wAlpha=0.22+0.12*Math.sin(t*.6+i);
+      fx.strokeStyle=`rgba(200,230,255,${wAlpha})`;
+      fx.lineWidth=1.8+Math.sin(t+i)*.5;
+      fx.beginPath();
+      for(let x=0;x<=fxc.width;x+=3){
+        const wave=Math.sin((x/fxc.width+wOff)*Math.PI*8)*6;
+        x===0?fx.moveTo(x,wy+wave):fx.lineTo(x,wy+wave);
+      }
+      fx.stroke();
+    }
+    // 白浪飞溅点
+    fx.fillStyle='rgba(255,255,255,0.35)';
+    for(let i=0;i<6;i++){
+      const sx=(Math.sin(t*.4+i*1.3)*.5+.5)*fxc.width;
+      const sy=H()*.68+Math.cos(t*.5+i)*H()*.04;
+      const sr=3+Math.sin(t*2+i)*1.5;
+      fx.beginPath();fx.arc(sx,sy,sr,0,Math.PI*2);fx.fill();
+    }
+  }
+
+  // ── 火把光效canvas ──
+  const tc=qs('s5-torch-canvas');
+  if(tc){
+    if(tc.width!==W()||tc.height!==H()){tc.width=W();tc.height=H();}
+    const tctx=tc.getContext('2d');
+    tctx.clearRect(0,0,tc.width,tc.height);
+    const skyImg=qs('s5-sky-img');
+    const imgW=skyImg.naturalWidth>0
+      ? skyImg.naturalWidth*(H()/skyImg.naturalHeight)
+      : W()*1.8;
+    const bridgeLeft =imgW*0.20-pan;
+    const bridgeRight=imgW*0.80-pan;
+    const torchPositions=Array.from({length:13},(_,i)=>
+      bridgeLeft+i/12*(bridgeRight-bridgeLeft));
+    torchPositions.slice(0,act5.torchLit).forEach(tx=>{
+      if(tx<-30||tx>W()+30) return;
+      const flicker=0.85+Math.random()*0.15;
+      const gg=tctx.createRadialGradient(tx,bridgeY-20,0,tx,bridgeY-20,28*flicker);
+      gg.addColorStop(0,'rgba(255,180,50,.8)');
+      gg.addColorStop(1,'rgba(255,80,0,0)');
+      tctx.fillStyle=gg;
+      tctx.beginPath();tctx.arc(tx,bridgeY-20,28*flicker,0,Math.PI*2);tctx.fill();
+      tctx.fillStyle='rgba(255,230,100,.95)';
+      tctx.beginPath();tctx.arc(tx,bridgeY-20,3,0,Math.PI*2);tctx.fill();
+    });
+  }
+
+  // ── 火花粒子 ──
+  const sc=qs('s5-sparks');
+  if(sc){
+    if(sc.width!==W()||sc.height!==H()){sc.width=W();sc.height=H();}
+    const sctx=sc.getContext('2d');
+    sctx.clearRect(0,0,sc.width,sc.height);
+    act5.sparks=act5.sparks.filter(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.vy*=.96;p.life-=.025;
+      if(p.life<=0) return false;
+      sctx.fillStyle=`rgba(255,${180+Math.floor(60*p.life)},40,${p.life*.8})`;
+      sctx.beginPath();sctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);sctx.fill();
+      return true;
+    });
+  }
+
+  // 第五幕一进入就显示（不受火把门控）
+  if(!act5.sub1){act5.sub1=true;
+    showSub('前面的勇士在爬，后面的战友在跟。','narrate');}
+
+  // 全部点亮后：震动 + 字幕 + 提示下滑
+  if(act5.torchLit>=13&&!act5.shoutDone){
+    act5.shoutDone=true;
+    const sh=qs('act5-shout');sh.classList.add('show');
+    qs('main').style.animation='screenShake .4s ease';
+    setTimeout(()=>{qs('main').style.animation='';},400);
+    setTimeout(()=>sh.classList.remove('show'),1500);
+    setTimeout(()=>showSub('桥上不止我一人。','narrate'),600);
+    // 全亮后提示下滑
+    setTimeout(()=>setHint('↓ 继续下滑'),2000);
+  }
+
+  // ── 进度节点（火把全亮后才能触发） ──
+  if(act5.torchLit<13) return; // 未全亮不触发后续节点
+
+  if(progress>.17&&!act5.sub0){act5.sub0=true;
+    showSub('铁索烫手，河水像要吃人。','narrate');}
+
+  if(progress>.30&&!act5.povShown){
+    act5.povShown=true;
+    qs('act5-pov').classList.add('show');
+    // 连续震动3次
+    const shakeTriple=(delay)=>{
+      setTimeout(()=>{
+        qs('main').style.animation='screenShake .35s ease';
+        setTimeout(()=>{qs('main').style.animation='';},350);
+      },delay);
+    };
+    shakeTriple(0);shakeTriple(450);shakeTriple(900);
+    // 对话框
+    setTimeout(()=>{
+      showPlayerDialog('娘，我可能回不去了。');
+      setTimeout(()=>hidePlayerDialog(),4000);
+    },1200);
+  }
+
+  if(progress>.40&&!act5.sub2){act5.sub2=true;
+    showSub('但路，一定要走完。','narrate');}
+
+  if(progress>.50&&!act5.shakeExtra){
+    act5.shakeExtra=true;
+    // 震动2次+重影
+    const ai=qs('act5-afterimage');
+    const shakeDouble=(delay)=>{
+      setTimeout(()=>{
+        qs('main').style.animation='screenShake .4s ease';
+        if(ai){ai.style.opacity='1';setTimeout(()=>{ai.style.opacity='0';},180);}
+        setTimeout(()=>{qs('main').style.animation='';},400);
+      },delay);
+    };
+    shakeDouble(0);shakeDouble(500);
+  }
+
+  if(progress>.60&&!act5.sub3){act5.sub3=true;
+    showSub('如果掉下去，我就是大渡河里的一块石头，','narrate');}
+
+  if(progress>.70&&!act5.fadeStarted){
+    act5.fadeStarted=true;
+    const fo=qs('act5-fadeout');
+    if(fo){fo.style.transition='opacity 2.5s ease';fo.style.opacity='1';}
+  }
+
+  if(progress>.80&&!act5.sub4){
+    act5.sub4=true;
+    // 最后一句在黑幕上居中显示，不走普通字幕条
+    qs('act5-final-line').classList.add('show');
+    setTimeout(()=>{ act5.canSwitch=true; },2000);
+  }
+  if(progress>.97&&act5.canSwitch) switchToAct(6);
+}
+
+// 第五幕：快速蒙太奇闪回
+const flashbackScenes=[
+  ()=>drawFlashback('于都河火把'),
+  ()=>drawFlashback('草地萤火虫'),
+  ()=>drawFlashback('赤水月亮'),
+  ()=>drawFlashback('李狗蛋'),
+  ()=>drawFlashback('识字课本'),
+];
+function drawFlashback(label){
+  const fb=qs('act5-flashback');
+  fb.innerHTML=`<span style="font-size:clamp(16px,2vw,22px);color:rgba(240,230,200,.7);
+    letter-spacing:.3em;text-shadow:0 0 20px rgba(255,255,255,.3)">${label}</span>`;
+  fb.classList.add('show');
+  setTimeout(()=>fb.classList.remove('show'),220);
+}
+function playAct5Flashback(){
+  flashbackScenes.forEach((fn,i)=>{
+    setTimeout(fn, i*260);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+
+   ██████  第六幕  ██████  夹金山
+
+══════════════════════════════════════════════════════════ */
+let act6={
+  eraseData:null,glyphShown:false,oldmanShown:false,
+  sceneShown:null, // 当前显示的场景id
+  sub0:false,sub1:false,sub2:false,sub2b:false,sub2c:false,
+  sub3:false,sub4:false,sub5:false
+};
+
+// 切换第六幕场景图的工具函数
+function act6ShowScene(id){
+  const scenes=['act6-soldier','act6-scene1','act6-scene2','act6-scene3','act6-scene4'];
+  scenes.forEach(sid=>{
+    const el=qs(sid);
+    if(el) el.classList.toggle('show', sid===id);
+  });
+  act6.sceneShown=id;
+}
+
+function initAct6(){
+  act6={eraseData:null,glyphShown:false,oldmanShown:false,
+    sceneShown:null,scene1Ready:false,
+    sub0:false,sub1:false,sub2:false,sub2b:false,sub2c:false,
+    sub3:false,sub4:false,sub5:false};
+
+  // 初始化canvas
+  const ec=qs('s6-erase');ec.width=W();ec.height=H();
+  const sc=qs('s6-storm');sc.width=W();sc.height=H();
+
+  // 雪地擦除事件
+  const scEl=qs('scene-6');
+  scEl.addEventListener('mousemove',act6EraseMove);
+  scEl.addEventListener('touchmove',act6EraseTouch,{passive:true});
+
+  // 初始化擦除层：将act6_snow.png绘制到canvas
+  act6.eraseData={covered:true,eraseAmount:0};
+  const ec2=qs('s6-erase');
+  const ectx2=ec2.getContext('2d');
+  const snowImg=new Image();
+  snowImg.src='act6_snow.png';
+  act6._snowImg=snowImg;
+  const drawSnow=()=>{
+    ectx2.clearRect(0,0,ec2.width,ec2.height);
+    ectx2.drawImage(snowImg,0,0,ec2.width,ec2.height);
+  };
+  if(snowImg.complete&&snowImg.naturalWidth>0) drawSnow();
+  else snowImg.addEventListener('load',drawSnow,{once:true});
+
+  // 重置所有场景
+  act6ShowScene(null);
+  qs('act6-oldman-wrap').classList.remove('show');
+  qs('act6-oldman-dialog').classList.remove('show');
+}
+
+function act6EraseMove(e){
+  if(phase!=='main'||currentAct!==6) return;
+  hideHint();
+  const ec=qs('s6-erase');if(!ec)return;
+  const ectx=ec.getContext('2d');
+  ectx.globalCompositeOperation='destination-out';
+  ectx.beginPath();ectx.arc(e.clientX,e.clientY,30,0,Math.PI*2);ectx.fill();
+  ectx.globalCompositeOperation='source-over';
+  act6.eraseData.eraseAmount=Math.min(1,act6.eraseData.eraseAmount+.012);
+}
+function act6EraseTouch(e){
+  act6EraseMove({clientX:e.touches[0].clientX,clientY:e.touches[0].clientY});
+}
+
+function updateAct6(progress,sy){
+  parallax(6,sy);
+
+  // 暴风雪（scene1/3/4显示时继续飘雪，soldier/scene2时停）
+  const sc=qs('s6-storm');
+  if(sc){
+    const sctx=sc.getContext('2d');
+    sctx.clearRect(0,0,sc.width,sc.height);
+    const snowCount=60;
+    const t=Date.now()*.001;
+    for(let i=0;i<snowCount;i++){
+      const x=((i/snowCount+t*.04)%1)*sc.width;
+      const y=((i*.37+t*.15)%1)*sc.height;
+      sctx.fillStyle=`rgba(255,255,255,${.3+Math.sin(i)*0.2})`;
+      sctx.beginPath();sctx.arc(x,y,1.5+Math.sin(i*.7),0,Math.PI*2);sctx.fill();
+    }
+    sctx.strokeStyle='rgba(255,255,255,.08)';sctx.lineWidth=1;
+    for(let i=0;i<20;i++){
+      const x=((i/20+t*.08)%1.2-.1)*sc.width;
+      const y=((i*.13+t*.06)%1)*sc.height;
+      sctx.beginPath();sctx.moveTo(x,y);sctx.lineTo(x+30,y+12);sctx.stroke();
+    }
+  }
+
+  // 擦雪进度→触发字幕
+  const ea=act6.eraseData?.eraseAmount||0;
+  if(ea>.35&&!act6.glyphShown){
+    act6.glyphShown=true;
+    showSub('古人也走过这里吗？','narrate');
+  }
+
+  // ── 进度节点 ──
+  if(progress>.04&&!act6.sub0){act6.sub0=true;
+    showSub('风像刀子，我感觉自己是一片冻硬的树皮。','narrate');}
+
+  // 18%：字幕→soldier场景
+  if(progress>.18&&!act6.sub1){act6.sub1=true;
+    showSub('有人坐下休息，就再也没起来。','narrate');
+    setTimeout(()=>{
+      // 隐藏scene-6底层（岩石+雪canvas），避免切场景时透出
+      qs('scene-6').style.opacity='0';
+      act6ShowScene('act6-soldier');
+    },1000);
+  }
+
+  // 35%：soldier上出现老兵对话框
+  if(progress>.35&&!act6.oldmanShown){
+    act6.oldmanShown=true;
+    qs('act6-oldman-wrap').classList.add('show');
+    setTimeout(()=>{
+      qs('act6-oldman-dialog').classList.add('show');
+      showSub('小鬼……活……着……','npc','老兵');
+    },400);
+    // 对话结束后切scene1，设置门控
+    setTimeout(()=>{
+      qs('act6-oldman-dialog').classList.remove('show');
+      qs('act6-oldman-wrap').classList.remove('show');
+      act6ShowScene('act6-scene1');
+      showSub('又一个战友，留在了山上。','narrate');
+      // 2秒后才允许触发下一句
+      setTimeout(()=>{ act6.scene1Ready=true; },2000);
+    },4000);
+  }
+
+  // 50%：切scene3，必须等scene1Ready才触发
+  if(progress>.50&&act6.scene1Ready&&!act6.sub2){act6.sub2=true;
+    act6ShowScene('act6-scene3');
+    showSub('我想起政委教我写「活」字。','narrate');}
+
+  // 60%：scene3上继续字幕
+  if(progress>.60&&!act6.sub2b){act6.sub2b=true;
+    showSub('左边三点水，右边一个「舌」。','narrate');}
+
+  // 70%：scene3上继续字幕
+  if(progress>.70&&!act6.sub2c){act6.sub2c=true;
+    showSub('活着，就是把凉的化成热的。','narrate');}
+
+  // 80%：切scene2，「再翻过这座山……」
+  if(progress>.80&&!act6.sub3){act6.sub3=true;
+    act6ShowScene('act6-scene2');
+    showSub('再翻过这座山，就是希望。','narrate');}
+
+  // 90%：切scene4（主角爬山背影）
+  if(progress>.90&&!act6.sub4){act6.sub4=true;
+    act6ShowScene('act6-scene4');}
+
+  if(progress>.95) switchToAct(7);
+}
+
+/* ══════════════════════════════════════════════════════════
+
+   ██████  第七幕  ██████  会宁会师
+
+══════════════════════════════════════════════════════════ */
+let act7={
+  circlePoints:[],circleCount:0,petalParticles:[],
+  trailPoints:[],
+  memoryPlayed:false,finalShown:false,
+  sub0:false,sub0b:false,sub1:false,sub1a:false,sub1b:false,
+  sub1c:false,sub1d:false,sub1e:false,
+  sub2:false,sub3:false,sub3b:false,sub4:false,sub5:false
+};
+
+function initAct7(){
+  act7={circlePoints:[],circleCount:0,petalParticles:[],
+    trailPoints:[],
+    memoryPlayed:false,finalShown:false,
+    sub0:false,sub0b:false,sub1:false,sub1a:false,sub1b:false,
+    sub1c:false,sub1d:false,sub1e:false,
+    sub2:false,sub3:false,sub3b:false,sub4:false,sub5:false};
+
+  const pc=qs('s7-petals');pc.width=W();pc.height=H();
+  const mc=qs('act7-memory-canvas');mc.width=W();mc.height=H();
+  // 轨迹canvas
+  const tc=qs('act7-trail-canvas');tc.width=W();tc.height=H();
+
+  // 画圈检测绑定到document，确保接收到事件
+  function onMove(e){
+    if(phase!=='main'||currentAct!==7) return;
+    const cx=e.clientX??e.touches?.[0]?.clientX??0;
+    const cy=e.clientY??e.touches?.[0]?.clientY??0;
+    act7CircleMove(cx,cy);
+  }
+  function onUp(){ act7.circlePoints=[]; act7.trailPoints=[]; }
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('mouseup',onUp);
+  document.addEventListener('touchmove',onMove,{passive:true});
+  document.addEventListener('touchend',onUp,{passive:true});
+  act7._handlers={onMove,onUp};
+
+  // 进入第七幕显示画圈提示
+  setTimeout(()=>setHint('用金色的轨迹画一个圆满的圆吧！'),800);
+}
+
+let act7LastCircleCheck=0;
+function act7CircleMove(cx,cy){
+  hideHint();
+  const now=Date.now();
+  act7.circlePoints.push({x:cx,y:cy,t:now});
+  act7.trailPoints.push({x:cx,y:cy,t:now});
+  // 轨迹超过120个点时裁剪
+  if(act7.circlePoints.length>120) act7.circlePoints.shift();
+  // 轨迹点保留最近1.5秒
+  act7.trailPoints=act7.trailPoints.filter(p=>now-p.t<1500);
+
+  // 每100ms检测一次（更频繁）
+  if(now-act7LastCircleCheck>100){
+    act7LastCircleCheck=now;
+    if(detectCircle(act7.circlePoints)){
+      act7.circleCount++;
+      act7.circlePoints=[];
+      // 成功画圈：轨迹闪白后清除
+      act7TrailFlash();
+      spawnSymbolPetals(act7.circleCount);
+      // 画1个圈后提示下滑
+      if(act7.circleCount>=1) setHint('↓ 下滑继续');
+    }
+  }
+}
+
+function act7TrailFlash(){
+  // 短暂把轨迹变成亮白色再消失
+  act7._trailFlash=true;
+  setTimeout(()=>{
+    act7._trailFlash=false;
+    act7.trailPoints=[];
+  },300);
+}
+
+function detectCircle(pts){
+  if(pts.length<25) return false;
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+  const cx=(Math.max(...xs)+Math.min(...xs))/2;
+  const cy=(Math.max(...ys)+Math.min(...ys))/2;
+  const radii=pts.map(p=>Math.sqrt((p.x-cx)**2+(p.y-cy)**2));
+  const avgR=radii.reduce((a,b)=>a+b,0)/radii.length;
+  const variance=radii.reduce((a,r)=>a+Math.abs(r-avgR),0)/radii.length;
+  const startEnd=Math.sqrt((pts[0].x-pts[pts.length-1].x)**2+(pts[0].y-pts[pts.length-1].y)**2);
+  // 放宽条件：variance<50%，闭合距离<1.5倍半径，最小半径30px
+  return variance<avgR*.50&&startEnd<avgR*1.5&&avgR>30;
+}
+
+// 大娘儿子对话框显示
+function act7SonSay(text){
+  const dlg=qs('act7-son-dialog');
+  const txt=qs('act7-son-text');
+  if(!dlg||!txt) return;
+  txt.textContent=text;
+  dlg.style.opacity='1';
+  clearTimeout(act7._sonDlgTimer);
+  act7._sonDlgTimer=setTimeout(()=>{dlg.style.opacity='0';},3000);
+}
+
+// 大娘儿子表情切换
+function act7ShowSon(expr){
+  const wrap=qs('act7-son-wrap');
+  if(!wrap) return;
+  wrap.style.opacity='1';
+  ['appear','doubt','joy','tears'].forEach(e=>{
+    const el=qs(`act7-son-${e}`);
+    if(el) el.style.display=(e===expr?'block':'none');
+  });
+}
+
+const symbolColors=['#ff8c00','#80ff80','#8080ff','#ff4040','#80c8ff','#ffd040'];
+function spawnSymbolPetals(n){
+  const count=20+n*8;
+  for(let i=0;i<count;i++){
+    act7.petalParticles.push({
+      x:W()*.5+(Math.random()-.5)*W()*.4,
+      y:H()*.5+(Math.random()-.5)*H()*.4,
+      vx:(Math.random()-.5)*2,vy:-(1+Math.random()*2),
+      r:4+Math.random()*8,
+      color:symbolColors[Math.min(n-1,symbolColors.length-1)],
+      life:1,decay:.006+Math.random()*.006,
+      rot:Math.random()*Math.PI*2,spin:( Math.random()-.5)*.1
+    });
+  }
+}
+
+function updateAct7(progress,sy){
+  // s7-sky/crowd canvas已隐藏，PNG提供背景
+  parallax(7,sy);
+
+  // 轨迹canvas：实时绘制画圈轨迹
+  const tc=qs('act7-trail-canvas');
+  if(tc){
+    if(tc.width!==W()||tc.height!==H()){tc.width=W();tc.height=H();}
+    const tctx=tc.getContext('2d');
+    tctx.clearRect(0,0,tc.width,tc.height);
+    const pts=act7.trailPoints;
+    if(pts.length>2){
+      tctx.lineCap='round';tctx.lineJoin='round';
+      const flash=act7._trailFlash;
+      for(let i=1;i<pts.length;i++){
+        const progress=(i/pts.length);
+        const alpha=progress*(flash?.9:.55);
+        const color=flash
+          ?`rgba(255,255,255,${alpha})`
+          :`rgba(255,210,80,${alpha})`;
+        const width=flash?5:2.5+progress*2;
+        tctx.strokeStyle=color;
+        tctx.lineWidth=width;
+        tctx.beginPath();
+        tctx.moveTo(pts[i-1].x,pts[i-1].y);
+        tctx.lineTo(pts[i].x,pts[i].y);
+        tctx.stroke();
+      }
+      // 轨迹头部光点
+      if(!flash){
+        const last=pts[pts.length-1];
+        const glow=tctx.createRadialGradient(last.x,last.y,0,last.x,last.y,12);
+        glow.addColorStop(0,'rgba(255,220,80,.7)');
+        glow.addColorStop(1,'rgba(255,180,0,0)');
+        tctx.fillStyle=glow;
+        tctx.beginPath();tctx.arc(last.x,last.y,12,0,Math.PI*2);tctx.fill();
+      }
+    }
+  }
+
+  // 人群欢呼（简单粒子）
+  const cc=qs('s7-crowd');
+  if(cc){
+    const cctx=cc.getContext('2d');
+    cctx.clearRect(0,0,cc.width,cc.height);
+    // 旗帜挥动
+    const flagCount=8;
+    for(let i=0;i<flagCount;i++){
+      const fx=lerp(.1,.9,i/(flagCount-1))*cc.width;
+      const fy=H()*.55+Math.sin(Date.now()*.002+i)*10;
+      cctx.strokeStyle='rgba(180,20,20,.7)';cctx.lineWidth=2;
+      cctx.beginPath();cctx.moveTo(fx,fy);cctx.lineTo(fx,fy-40);cctx.stroke();
+      cctx.fillStyle='rgba(200,30,30,.75)';
+      const wave=Math.sin(Date.now()*.003+i);
+      cctx.beginPath();
+      cctx.moveTo(fx,fy-40);
+      cctx.quadraticCurveTo(fx+15+wave*5,fy-32,fx+25,fy-25);
+      cctx.quadraticCurveTo(fx+15+wave*5,fy-18,fx,fy-25);
+      cctx.fill();
+    }
+  }
+
+  // 花瓣雨
+  const pc=qs('s7-petals');
+  if(pc){
+    const pctx=pc.getContext('2d');
+    pctx.clearRect(0,0,pc.width,pc.height);
+    act7.petalParticles=act7.petalParticles.filter(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.vy+=.02;p.rot+=p.spin;p.life-=p.decay;
+      if(p.life<=0) return false;
+      pctx.save();pctx.translate(p.x,p.y);pctx.rotate(p.rot);pctx.globalAlpha=p.life*.8;
+      pctx.fillStyle=p.color;
+      pctx.beginPath();pctx.ellipse(0,0,p.r,p.r*.5,0,0,Math.PI*2);pctx.fill();
+      pctx.restore();pctx.globalAlpha=1;
+      return true;
+    });
+  }
+
+  // 去掉回忆闪现（原memoryPlayed逻辑删除）
+
+  // 进度节点
+  if(progress>.04&&!act7.sub0){act7.sub0=true;
+    showSub('两年前我不知道什么叫长征。','narrate');}
+  if(progress>.12&&!act7.sub0b){act7.sub0b=true;
+    showSub('现在我知道了。','narrate');}
+  if(progress>.20&&!act7.sub1){act7.sub1=true;
+    showSub('在人群里，我找一个人。','narrate');}
+  if(progress>.28&&!act7.sub1b){act7.sub1b=true;
+    showSub('忽地，我看见一张似曾相识的面孔。','narrate');
+    act7ShowSon('appear');
+  }
+  if(progress>.36&&!act7.sub1c){act7.sub1c=true;
+    showSub('他的眉眼……与那个送我鸡蛋的大娘有几分相似。','narrate');
+    act7ShowSon('doubt');
+  }
+  if(progress>.43&&!act7.sub1a){act7.sub1a=true;
+    showSub('他——大娘的娃，还活着！','narrate');}
+  if(progress>.50&&!act7.sub1d){act7.sub1d=true;
+    showSub('他慢慢向我走来，眼神从犹疑变得惊喜。','narrate');
+    act7ShowSon('joy');
+    setTimeout(()=>{
+      const nameEl=qs('act7-son-name');
+      if(nameEl) nameEl.style.opacity='1';
+    },800);
+  }
+  if(progress>.57&&!act7.sub1e){act7.sub1e=true;
+    act7SonSay('……是你？');}
+  if(progress>.63&&!act7.sub2){act7.sub2=true;
+    showPlayerDialog('哥……我……我把鸡蛋……带回来了。');
+    setTimeout(()=>hidePlayerDialog(),4000);
+  }
+  if(progress>.70&&!act7.sub3){act7.sub3=true;
+    act7ShowSon('tears');
+    act7SonSay('傻子，鸡蛋早该吃了。');
+  }
+  if(progress>.76&&!act7.sub3b){act7.sub3b=true;
+    act7SonSay('活着就好，活着就好……');}  
+  if(progress>.83&&!act7.sub4){act7.sub4=true;
+    showSub('我们没有说话，只是哭。','narrate');}
+  if(progress>.90&&!act7.sub5){act7.sub5=true;
+    showSub('我们赢了。','narrate');}
+  if(progress>.95&&!act7.finalShown){
+    act7.finalShown=true;
+    showAct7Final();
+  }
+}
+
+// 第七幕最终画面：星空背景+逐句渐显
+function showAct7Final(){
+  const ft=qs('act7-final-text');
+  ft.classList.add('show');
+  // 启动星星动画（复用intro-stars逻辑）
+  const sc=qs('act7-final-stars');
+  if(sc){
+    sc.width=window.innerWidth;sc.height=window.innerHeight;
+    const sctx=sc.getContext('2d');
+    const stars=Array.from({length:120},()=>({
+      x:Math.random()*sc.width,y:Math.random()*sc.height,
+      r:.5+Math.random()*1.5,a:Math.random(),da:(Math.random()-.5)*.01
+    }));
+    function drawStars(){
+      if(!qs('act7-final-text').classList.contains('show')) return;
+      sctx.clearRect(0,0,sc.width,sc.height);
+      stars.forEach(s=>{
+        s.a=Math.max(0.05,Math.min(1,s.a+s.da));
+        if(s.a<=0.05||s.a>=1) s.da*=-1;
+        sctx.fillStyle=`rgba(255,255,255,${s.a})`;
+        sctx.beginPath();sctx.arc(s.x,s.y,s.r,0,Math.PI*2);sctx.fill();
+      });
+      requestAnimationFrame(drawStars);
+    }
+    drawStars();
+  }
+  // 逐句渐显
+  const lines=['fl0','fl1','fl2','fl3','fl4','fl-dedication'];
+  const delays=[800,2200,3800,5000,6200,8000];
+  lines.forEach((id,i)=>{
+    setTimeout(()=>{
+      const el=qs(id);if(el) el.classList.add('show');
+    },delays[i]);
+  });
+  // 全部显示后进入结尾
+  setTimeout(()=>showEnding(),10500);
+}
+
+
+let mainStarted=false;
+function startMainLoop(){
+  if(mainStarted) return;
+  mainStarted=true;
+  function tick(){
+    if(phase!=='main'){requestAnimationFrame(tick);return;}
+    // Act1 使用阶段驱动，不需要progress
+    if(currentAct===1){
+      updateAct1();
+    } else {
+      scrollY=lerp(scrollY,targetScrollY,.08);
+      const progress=scrollY/SCROLL_PER_ACT;
+      qs('progress-bar').style.width=(progress*100)+'%';
+      ({2:updateAct2,3:updateAct3,4:updateAct4,
+        5:updateAct5,6:updateAct6,7:updateAct7}[currentAct]||function(){})(progress,scrollY);
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ══════════════════════════════════════════════════════════
+   结尾 / 游戏B
+══════════════════════════════════════════════════════════ */
+function showEnding(){
+  const mask=qs('global-mask');
+  mask.style.opacity='1';
+  setTimeout(()=>{
+    qs('main').style.display='none';
+    const end=qs('ending');end.style.display='flex';
+    mask.style.opacity='0';
+    setTimeout(()=>{
+      qs('ending-text').classList.add('show');
+      setTimeout(()=>qs('ending-btns').classList.add('show'),800);
+    },300);
+  },700);
+}
+function openGameB(){
+  const wrap=qs('game-b-wrap');wrap.style.display='flex';
+}
+function closeGameB(){
+  qs('game-b-wrap').style.display='none';
+}
+function restartStory(){
+  const mask=qs('global-mask');
+  mask.style.opacity='1';
+  setTimeout(()=>{
+    // 隐藏结尾
+    qs('ending').style.display='none';
+    // 完整清理第七幕final-text
+    const ft=qs('act7-final-text');
+    ft.classList.remove('show');
+    ['fl0','fl1','fl2','fl3','fl4','fl-dedication'].forEach(id=>{
+      const el=qs(id);if(el) el.classList.remove('show');
+    });
+    // 清理所有幕的残留状态
+    cleanupAct(currentAct);
+    hideAllSubs();
+    hidePlayerDialog();
+    resetSubtitles();
+    // 重置滚动和phase
+    scrollY=0;targetScrollY=0;currentAct=1;mainStarted=false;
+    // 显示intro
+    qs('intro').style.display='flex';
+    qs('intro').style.opacity='1';
+    phase='intro';
+    mask.style.opacity='0';
+  },700);
+}
+
+/* ══════════════════════════════════════════════════════════
+   窗口resize
+══════════════════════════════════════════════════════════ */
+window.addEventListener('resize',()=>{
+  ['s1-sky','s1-torches','s2-sky','s2-swamp','s3-sky','s3-river',
+   's4-sky','s4-smoke','s4-fx','s5-sky','s5-river','s5-bridge','s5-sparks',
+   's6-sky','s6-erase','s6-storm','s7-sky','s7-crowd','s7-petals',
+   'act7-memory-canvas']
+    .forEach(id=>{const c=qs(id);if(c){c.width=W();c.height=H();}});
+});
+/* ══════════════════════════════════════════════════════════
+   横屏检测（手机竖屏时显示提示，电脑端完全不触发）
+══════════════════════════════════════════════════════════ */
+function checkRotate(){
+  const tip=document.getElementById('rotate-tip');
+  if(!tip) return;
+  // 严格判断：必须同时满足触屏+屏幕物理宽度≤768px才视为手机
+  const isPhone=navigator.maxTouchPoints>0 && window.screen.width<=768;
+  if(!isPhone){ tip.style.display='none'; return; }
+  const isPortrait=window.innerHeight>window.innerWidth;
+  tip.style.display=isPortrait?'flex':'none';
+}
+// 页面加载完成后延迟检测，避免误触发
+window.addEventListener('load',()=>setTimeout(checkRotate,500));
+window.addEventListener('orientationchange',()=>setTimeout(checkRotate,300));
+window.addEventListener('resize',checkRotate);
+</script>
+</body>
+</html>

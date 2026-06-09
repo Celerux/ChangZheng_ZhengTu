@@ -1,0 +1,2260 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#05060a">
+<meta name="format-detection" content="telephone=no">
+<meta name="HandheldFriendly" content="true">
+<meta name="x5-orientation" content="landscape">
+<meta name="screen-orientation" content="landscape">
+<meta name="full-screen" content="yes">
+<meta name="x5-fullscreen" content="true">
+<title>长征 · 薪火征程</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#c0392b; --red-bright:#e0483a; --gold:#e0b04a; --gold-dim:#a8853a;
+    --ink:#11140f; --ink2:#1a1e15; --panel:#181c14; --panel2:#22281d;
+    --parch:#d9cda8; --parch-dim:#b3a884; --line:#3a4030; --muted:#8a9472;
+    --shadow:0 10px 40px rgba(0,0,0,.6);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(120% 120% at 50% -10%, #2a3022 0%, #14180f 55%, #0a0c07 100%);
+    color:var(--parch);
+    font-family:"Noto Sans SC",system-ui,sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; min-height:100dvh; overflow:hidden; -webkit-font-smoothing:antialiased;
+    user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent;
+  }
+  /* faint grain over everything */
+  body::after{
+    content:""; position:fixed; inset:0; pointer-events:none; opacity:.05; z-index:9999;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  #wrap{
+    position:relative;
+    width:min(96vw, 168vh); aspect-ratio:16/9;
+    border:2px solid var(--line);
+    box-shadow:var(--shadow), inset 0 0 0 1px rgba(224,176,74,.08);
+    background:#05060a; overflow:hidden; border-radius:6px;
+    touch-action:none;
+  }
+  /* corner ticks */
+  .tick{position:absolute;width:14px;height:14px;border:2px solid var(--gold);opacity:.55;z-index:30;pointer-events:none}
+  .tick.tl{top:6px;left:6px;border-right:0;border-bottom:0}
+  .tick.tr{top:6px;right:6px;border-left:0;border-bottom:0}
+  .tick.bl{bottom:6px;left:6px;border-right:0;border-top:0}
+  .tick.br{bottom:6px;right:6px;border-left:0;border-top:0}
+
+  canvas#cv{
+    position:absolute; inset:0; width:100%; height:100%;
+    image-rendering:pixelated; image-rendering:crisp-edges;
+    background:#05060a; display:block;
+  }
+
+  /* ===== DOM HUD (crisp Chinese) ===== */
+  #hud{position:absolute;inset:0;pointer-events:none;z-index:20;font-size:clamp(10px,1.5vw,15px)}
+  #objective{
+    position:absolute; top:2.5%; left:50%; transform:translateX(-50%);
+    background:rgba(10,12,8,.72); border:1px solid var(--line);
+    border-left:3px solid var(--red); padding:.35em .9em; border-radius:3px;
+    letter-spacing:.04em; max-width:80%; text-align:center; backdrop-filter:blur(2px);
+    box-shadow:0 4px 14px rgba(0,0,0,.4);
+  }
+  #objective b{color:var(--gold);font-weight:700}
+  #toast{
+    position:absolute; left:50%; bottom:14%; transform:translateX(-50%);
+    display:flex; flex-direction:column; gap:.3em; align-items:center; width:90%;
+  }
+  .toast-msg{
+    background:rgba(12,14,9,.82); border:1px solid var(--line); color:var(--parch);
+    padding:.25em .7em; border-radius:3px; font-size:.92em; opacity:0; transform:translateY(8px);
+    animation:toastIn .35s ease forwards;
+  }
+  .toast-msg .pin{color:var(--gold);font-weight:700}
+  @keyframes toastIn{to{opacity:1;transform:translateY(0)}}
+  #banner{
+    position:absolute; top:34%; left:50%; transform:translate(-50%,-50%) scale(.8);
+    text-align:center; opacity:0; pointer-events:none;
+  }
+  #banner.show{animation:bannerPop 2.6s ease forwards}
+  #banner .t1{font-family:"Ma Shan Zheng",serif;font-size:2.6em;color:var(--gold);
+    text-shadow:0 2px 0 #6a4d18, 0 0 22px rgba(224,176,74,.5)}
+  #banner .t2{font-size:.95em;color:var(--parch);letter-spacing:.2em;margin-top:.2em}
+  @keyframes bannerPop{
+    0%{opacity:0;transform:translate(-50%,-50%) scale(.8)}
+    12%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}
+    20%{transform:translate(-50%,-50%) scale(1)}
+    80%{opacity:1}
+    100%{opacity:0;transform:translate(-50%,-55%) scale(1)}
+  }
+
+  /* ===== Menus / overlays ===== */
+  .screen{
+    position:absolute; inset:0; z-index:40; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:4%;
+    background:
+      radial-gradient(120% 90% at 50% 0%, rgba(40,46,32,.5), rgba(7,9,5,.92) 70%),
+      linear-gradient(rgba(5,7,4,.6),rgba(5,7,4,.85));
+    backdrop-filter:blur(3px);
+    overflow-y:auto; -webkit-overflow-scrolling:touch;
+  }
+  .screen.hidden{display:none}
+  .crest{
+    width:clamp(54px,9vw,84px); height:clamp(54px,9vw,84px); margin-bottom:.4em;
+    filter:drop-shadow(0 4px 10px rgba(192,57,43,.4));
+  }
+  .title{
+    font-family:"Ma Shan Zheng",serif; line-height:.95;
+    font-size:clamp(46px,10vw,108px); color:var(--parch);
+    text-shadow:0 3px 0 #000, 0 0 30px rgba(224,176,74,.25);
+    letter-spacing:.06em;
+  }
+  .title .accent{color:var(--red-bright);text-shadow:0 3px 0 #4a120b,0 0 26px rgba(224,72,58,.5)}
+  .subtitle{
+    margin-top:.5em; font-size:clamp(11px,1.7vw,16px); letter-spacing:.5em;
+    color:var(--gold-dim); text-transform:uppercase; padding-left:.5em;
+  }
+  .rule{width:min(420px,70%);height:1px;margin:1.2em auto;
+    background:linear-gradient(90deg,transparent,var(--gold-dim),transparent);opacity:.6}
+  .lead{max-width:600px;color:var(--muted);font-size:clamp(11px,1.5vw,14px);line-height:1.7}
+
+  .levels{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:760px;margin:1.4em 0 1em}
+  .lv{
+    pointer-events:auto; cursor:pointer; width:150px; text-align:left;
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border:1px solid var(--line); border-radius:5px; padding:.7em .8em .65em;
+    position:relative; transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    overflow:hidden;
+  }
+  .lv .no{font-family:"Ma Shan Zheng",serif;font-size:1.5em;color:var(--gold-dim);line-height:1}
+  .lv .nm{font-weight:700;margin-top:.15em;font-size:.98em;color:var(--parch)}
+  .lv .ds{font-size:.74em;color:var(--muted);margin-top:.2em;letter-spacing:.02em}
+  .lv::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--line)}
+  .lv.play::before{background:var(--red)}
+  .lv.play:hover{transform:translateY(-3px);border-color:var(--gold-dim);
+    box-shadow:0 8px 22px rgba(0,0,0,.5),0 0 0 1px rgba(224,176,74,.15)}
+  .lv.play .no{color:var(--gold)}
+  .lv.lock{opacity:.5;cursor:not-allowed}
+  .lv.lock .badge{position:absolute;top:.5em;right:.5em;font-size:.62em;letter-spacing:.05em;
+    color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:.05em .5em}
+  .lv .tag{position:absolute;top:.5em;right:.5em;font-size:.62em;letter-spacing:.06em;
+    color:#0a0c07;background:var(--gold);border-radius:99px;padding:.08em .55em;font-weight:700}
+
+  .btn{
+    pointer-events:auto; cursor:pointer; font-family:"Noto Sans SC",sans-serif; font-weight:700;
+    letter-spacing:.18em; font-size:clamp(13px,1.8vw,17px); color:#0a0c07;
+    background:linear-gradient(180deg,var(--gold),var(--gold-dim));
+    border:0; padding:.7em 2.4em; border-radius:4px; margin-top:.3em;
+    box-shadow:0 6px 0 #6a4d18, 0 10px 24px rgba(0,0,0,.45);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .btn:active{transform:translateY(4px);box-shadow:0 2px 0 #6a4d18,0 6px 14px rgba(0,0,0,.45)}
+  .btn.ghost{background:transparent;color:var(--parch);border:1px solid var(--line);
+    box-shadow:none;font-weight:500;letter-spacing:.1em;padding:.55em 1.6em}
+  .btn.ghost:active{transform:translateY(2px)}
+
+  .controls{margin-top:1.3em;display:flex;gap:1.4em;flex-wrap:wrap;justify-content:center;
+    color:var(--muted);font-size:clamp(10px,1.4vw,13px)}
+  .controls .k{display:inline-flex;align-items:center;gap:.4em}
+  .key{display:inline-block;min-width:1.6em;text-align:center;padding:.12em .4em;border:1px solid var(--line);
+    border-bottom-width:3px;border-radius:4px;background:var(--panel);color:var(--parch);font-size:.92em;font-weight:700}
+
+  .ov-title{font-family:"Ma Shan Zheng",serif;font-size:clamp(40px,9vw,88px);line-height:1}
+  .win .ov-title{color:var(--gold);text-shadow:0 3px 0 #000,0 0 30px rgba(224,176,74,.4)}
+  .lose .ov-title{color:var(--red-bright);text-shadow:0 3px 0 #000}
+  .ov-sub{color:var(--muted);margin:.7em 0 .2em;max-width:560px;line-height:1.7;font-size:clamp(12px,1.6vw,15px)}
+  .stats{display:flex;gap:1.6em;margin:1em 0;color:var(--parch);font-size:clamp(11px,1.5vw,14px)}
+  .stats b{display:block;font-family:"Ma Shan Zheng",serif;font-size:1.7em;color:var(--gold);font-weight:400}
+  .verse{font-family:"Ma Shan Zheng",serif;font-size:clamp(15px,2.2vw,22px);color:var(--parch);
+    line-height:1.9;margin:.6em 0 1em;opacity:.92}
+
+  .hint-fade{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);color:var(--muted);
+    font-size:clamp(9px,1.3vw,12px);letter-spacing:.08em;opacity:.7;text-align:center;z-index:21;pointer-events:none}
+
+  .loadnote{position:absolute;bottom:3%;left:50%;transform:translateX(-50%);color:var(--muted);
+    font-size:11px;letter-spacing:.1em;opacity:.6}
+  @media (max-width:560px){ .levels{max-width:340px} .lv{width:calc(50% - 6px)} }
+
+  /* ===== TOUCH CONTROLS (shown only when body.touch) ===== */
+  #touchUI{position:absolute;inset:0;z-index:25;pointer-events:none;display:none}
+  body.touch.playing #touchUI{display:block}
+  #joyBase{
+    position:absolute; left:4.5%; bottom:9%; width:23vmin; height:23vmin;
+    max-width:128px; max-height:128px; border-radius:50%;
+    background:radial-gradient(circle at 50% 45%, rgba(224,176,74,.10), rgba(10,12,8,.42) 70%);
+    border:2px solid rgba(224,176,74,.32); box-shadow:0 4px 16px rgba(0,0,0,.5);
+    pointer-events:auto; touch-action:none;
+  }
+  #joyKnob{
+    position:absolute; left:50%; top:50%; width:42%; height:42%;
+    transform:translate(-50%,-50%); border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, #e6c468, #b0852f);
+    border:1px solid rgba(0,0,0,.4); box-shadow:0 2px 8px rgba(0,0,0,.5), inset 0 1px 2px rgba(255,255,255,.3);
+  }
+  .tbtn{
+    position:absolute; border-radius:50%; pointer-events:auto; touch-action:none;
+    display:flex; align-items:center; justify-content:center;
+    font-family:"Ma Shan Zheng",serif; color:var(--parch);
+    border:2px solid rgba(224,176,74,.4); box-shadow:0 4px 14px rgba(0,0,0,.5);
+    transition:transform .05s, background .1s; user-select:none;
+  }
+  .tbtn:active{ transform:scale(.92) }
+  .controls.touch-only{display:none}
+  body.touch .controls.kbd{display:none}
+  body.touch .controls.touch-only{display:flex}
+  #btnPause{
+    position:absolute; top:2.5%; right:3%; width:8.5vmin; height:8.5vmin;
+    max-width:46px; max-height:46px; border-radius:8px; pointer-events:auto; touch-action:none;
+    display:flex; align-items:center; justify-content:center; gap:2px;
+    background:rgba(10,12,8,.6); border:1px solid rgba(224,176,74,.35);
+    box-shadow:0 3px 10px rgba(0,0,0,.5);
+  }
+  #btnPause i{display:block;width:3px;height:42%;background:var(--parch);border-radius:1px}
+  #btnFire{
+    right:5%; bottom:10%; width:19vmin; height:19vmin; max-width:108px; max-height:108px;
+    background:radial-gradient(circle at 45% 40%, rgba(224,72,58,.5), rgba(120,30,24,.55) 75%);
+    border-color:rgba(224,72,58,.6); font-size:clamp(20px,5vmin,30px);
+  }
+  #btnMelee{
+    right:24%; bottom:8%; width:13vmin; height:13vmin; max-width:74px; max-height:74px;
+    background:radial-gradient(circle at 45% 40%, rgba(224,176,74,.34), rgba(60,46,18,.5) 75%);
+    border-color:rgba(224,176,74,.5); font-size:clamp(14px,3.4vmin,20px);
+  }
+  /* rotate-to-landscape hint */
+  #rotate{
+    position:fixed; inset:0; z-index:200; display:none;
+    background:radial-gradient(120% 120% at 50% 30%, #20261a, #0a0c07);
+    color:var(--parch); flex-direction:column; align-items:center; justify-content:center; gap:1.1em; text-align:center; padding:2em;
+  }
+  body.touch.portrait #rotate{ display:flex }
+  #rotate .ph{font-family:"Ma Shan Zheng",serif;font-size:clamp(26px,9vw,46px);color:var(--gold)}
+  #rotate .pi{font-size:clamp(40px,16vw,90px);animation:rot 2.4s ease-in-out infinite;transform-origin:center}
+  #rotate .pt{font-size:clamp(13px,3.6vw,17px);color:var(--parch-dim);letter-spacing:.1em;max-width:18em;line-height:1.7}
+  @keyframes rot{0%,40%{transform:rotate(0)}60%,100%{transform:rotate(90deg)}}
+
+  /* ---- touch / mobile layout: JS-driven letterbox, never distorts ---- */
+  body.touch{ overflow:hidden; }
+  body.touch #wrap{
+    width:100vw; width:100dvw;
+    height:100vh; height:100dvh;
+    max-width:none; aspect-ratio:auto;
+    border:0; border-radius:0; box-shadow:none; background:#05060a;
+  }
+  body.touch .tick{ display:none; }
+  /* canvas centered; its pixel size is set by JS fitCanvas() to keep 16:9 */
+  body.touch canvas#cv{
+    position:absolute; inset:auto; left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    width:auto; height:auto;
+  }
+  /* keep on-screen controls clear of notches / rounded corners */
+  #touchUI{
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <span class="tick tl"></span><span class="tick tr"></span><span class="tick bl"></span><span class="tick br"></span>
+
+  <canvas id="cv" width="480" height="270"></canvas>
+
+  <!-- in-game HUD -->
+  <div id="hud" class="hidden">
+    <div id="objective"></div>
+    <div id="banner"><div class="t1"></div><div class="t2"></div></div>
+    <div id="toast"></div>
+    <div class="hint-fade" id="ingameHint"></div>
+  </div>
+
+  <!-- touch controls (mobile/tablet) -->
+  <div id="touchUI">
+    <div id="joyBase"><div id="joyKnob"></div></div>
+    <div id="btnMelee" class="tbtn">刺</div>
+    <div id="btnFire" class="tbtn">击</div>
+    <div id="btnPause"><i></i><i></i></div>
+  </div>
+
+  <!-- rotate-to-landscape hint -->
+  <div id="rotate">
+    <div class="pi">📱</div>
+    <div class="ph">请横屏游玩</div>
+    <div class="pt">《长征 · 薪火征程》为横屏体验设计<br>请将设备旋转至横向</div>
+  </div>
+
+  <!-- MENU -->
+  <div id="menu" class="screen">
+    <svg class="crest" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="30" fill="none" stroke="#a8853a" stroke-width="2"/>
+      <path fill="#e0483a" d="M32 9l5.6 17.2H55.6L41 36.8l5.6 17.2L32 43.4 17.4 54 23 36.8 8.4 26.2H26.4z"/>
+      <circle cx="32" cy="32" r="3.4" fill="#e0b04a"/>
+    </svg>
+    <h1 class="title">薪火<span class="accent">征程</span></h1>
+    <div class="subtitle">THE LONG MARCH</div>
+    <div class="rule"></div>
+    <p class="lead">扮演一名红军战士,穿越长征途中最艰险的关隘。探索迷宫般的大地图,在饥饿与严寒中求生,与围堵之敌周旋——直至会宁会师。</p>
+    <div class="levels" id="levelList"></div>
+    <button class="btn" id="startBtn">开 始 征 程</button>
+    <div class="controls kbd">
+      <span class="k"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> 移动</span>
+      <span class="k"><span class="key">鼠标</span> 瞄准 · <span class="key">左键</span>/<span class="key">J</span> 射击</span>
+      <span class="k"><span class="key">空格</span> 拼刺刀</span>
+      <span class="k"><span class="key">E</span> 交互</span>
+      <span class="k"><span class="key">P</span> 暂停 · <span class="key">M</span> 静音</span>
+    </div>
+    <div class="controls touch-only">
+      <span class="k"><span class="key">摇杆</span> 移动</span>
+      <span class="k"><span class="key">击</span> 射击(自动瞄准)</span>
+      <span class="k"><span class="key">刺</span> 拼刺刀</span>
+      <span class="k">拾取物资 · 自动</span>
+    </div>
+  </div>
+
+  <!-- PAUSE -->
+  <div id="pause" class="screen hidden">
+    <h2 class="ov-title" style="color:var(--parch)">休 整</h2>
+    <p class="ov-sub" id="pauseObj"></p>
+    <button class="btn" id="resumeBtn">继 续</button>
+    <button class="btn ghost" id="quitBtn">返回选关</button>
+  </div>
+
+  <!-- WIN -->
+  <div id="win" class="screen win hidden">
+    <h2 class="ov-title">关 隘 已 破</h2>
+    <p class="verse" id="winVerse"></p>
+    <p class="ov-sub" id="winSub"></p>
+    <div class="stats" id="winStats"></div>
+    <button class="btn" id="nextBtn">下一关</button>
+    <button class="btn ghost" id="winMenuBtn">返回选关</button>
+  </div>
+
+  <!-- LOSE -->
+  <div id="lose" class="screen lose hidden">
+    <h2 class="ov-title">壮 士 长 眠</h2>
+    <p class="ov-sub" id="loseSub">长征路上,每一步都浸着热血。整顿队伍,再度出发。</p>
+    <button class="btn" id="retryBtn">重 整 旗 鼓</button>
+    <button class="btn ghost" id="loseMenuBtn">返回选关</button>
+  </div>
+
+  <div class="loadnote" id="loadnote">正在生成战场地形…</div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   长征 · 薪火征程  —  single-file pixel action/survival
+   ===================================================================== */
+
+/* ---------------- constants ---------------- */
+const VIEW_W = 480, VIEW_H = 270;          // logical render size
+const TILE = 16;
+const MAP_W = 64, MAP_H = 64;
+const WORLD_W = MAP_W * TILE, WORLD_H = MAP_H * TILE;
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+/* offscreen lighting buffer */
+const lightCv = document.createElement('canvas');
+lightCv.width = VIEW_W; lightCv.height = VIEW_H;
+const lctx = lightCv.getContext('2d');
+
+/* ---------------- util ---------------- */
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const dist2=(x,y)=>x*x+y*y;
+const rand=(a,b)=>a+Math.random()*(b-a);
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function hash2(x,y){let h=x*374761393+y*668265263;h=(h^(h>>13))*1274126177;return((h^(h>>16))>>>0)/4294967296;}
+
+/* tile-grid value noise -> smooth blobby field in [0,1] */
+function smoothField(rng,w,h,smoothPasses){
+  let f=new Float32Array(w*h);
+  for(let i=0;i<f.length;i++) f[i]=rng();
+  let g=new Float32Array(w*h);
+  for(let p=0;p<smoothPasses;p++){
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+      let s=0,n=0;
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        let xx=x+dx,yy=y+dy; if(xx<0||yy<0||xx>=w||yy>=h)continue;
+        s+=f[yy*w+xx]; n++;
+      }
+      g[y*w+x]=s/n;
+    }
+    [f,g]=[g,f];
+  }
+  // normalize
+  let mn=Infinity,mx=-Infinity;
+  for(const v of f){if(v<mn)mn=v;if(v>mx)mx=v;}
+  for(let i=0;i<f.length;i++) f[i]=(f[i]-mn)/(mx-mn+1e-6);
+  return f;
+}
+
+/* ---------------- pixel font (digits + a few glyphs) ---------------- */
+const FONT={
+ '0':["111","101","101","101","111"],'1':["010","110","010","010","111"],
+ '2':["111","001","111","100","111"],'3':["111","001","111","001","111"],
+ '4':["101","101","111","001","001"],'5':["111","100","111","001","111"],
+ '6':["111","100","111","101","111"],'7':["111","001","010","010","010"],
+ '8':["111","101","111","101","111"],'9':["111","101","111","001","111"],
+ '/':["001","001","010","100","100"],'%':["101","001","010","100","101"],
+ 'x':["000","101","010","101","000"],'+':["000","010","111","010","000"],
+ '-':["000","000","111","000","000"],':':["0","1","0","1","0"]
+};
+function drawText(c,str,x,y,s,col){
+  c.fillStyle=col; let cx=x;
+  for(const ch of str){
+    const g=FONT[ch]||FONT['0'];
+    if(ch===' '){cx+=4*s;continue;}
+    const w=g[0].length;
+    for(let r=0;r<g.length;r++)for(let q=0;q<w;q++){
+      if(g[r][q]==='1') c.fillRect(cx+q*s, y+r*s, s, s);
+    }
+    cx+=(w+1)*s;
+  }
+  return cx;
+}
+
+/* ---------------- sprite factory ---------------- */
+function makeCanvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
+function px(c,x,y,w,h,col){c.fillStyle=col;c.fillRect(x,y,w,h);}
+
+/* soldier sprite: 16x18, 4 dirs(0 down,1 up,2 left,3 right) x 3 frames(idle, step1, step2) */
+const SOLD_W=16, SOLD_H=18;
+// reusable offscreen buffer for sprite hurt-flash tint (keeps tint inside sprite alpha)
+const tintCv=document.createElement('canvas'); tintCv.width=SOLD_W; tintCv.height=SOLD_H;
+const tintCtx=tintCv.getContext('2d'); tintCtx.imageSmoothingEnabled=false;
+function buildSoldier(pal){
+  // pal: cap, capDark, star, skin, coat, coatDark, belt, leg, boot
+  const dirs=4, frames=3;
+  const sheet=makeCanvas(SOLD_W*frames, SOLD_H*dirs);
+  const s=sheet.getContext('2d');
+  for(let d=0;d<dirs;d++)for(let f=0;f<frames;f++){
+    const ox=f*SOLD_W, oy=d*SOLD_H;
+    const c={ fillRect:(x,y,w,h)=>{s.fillRect(ox+x,oy+y,w,h);}, set fillStyle(v){s.fillStyle=v;} };
+    drawSoldierFrame(s,ox,oy,d,f,pal);
+  }
+  return sheet;
+}
+function drawSoldierFrame(s,ox,oy,d,f,p){
+  const P=(x,y,w,h,col)=>{s.fillStyle=col;s.fillRect(ox+x,oy+y,w,h);};
+  const legSwing = f===1?1:(f===2?-1:0);
+  // shadow handled separately
+  // legs
+  P(5,15,2,3,p.leg); P(9,15,2,3,p.leg);
+  P(5,17+0,2,1,p.boot); P(9,17,2,1,p.boot);
+  if(legSwing!==0){ // animate one leg forward
+    P(5,15,2,3,p.legShade); P(9,15,2,3,p.leg);
+  }
+  // coat body
+  P(4,8,8,8,p.coatDark);
+  P(5,8,6,7,p.coat);
+  // belt
+  P(4,12,8,1,p.belt);
+  // arms depend on dir
+  if(d===2){P(3,9,2,5,p.coatDark);} // left
+  else if(d===3){P(11,9,2,5,p.coatDark);} //right
+  else {P(3,9,2,5,p.coatDark);P(11,9,2,5,p.coatDark);}
+  // head
+  P(5,3,6,5,p.skin);
+  P(5,3,6,1,p.skinShade);
+  // cap (octagon-ish)
+  P(4,1,8,3,p.cap);
+  P(4,3,8,1,p.capDark);
+  P(5,0,6,1,p.cap);
+  // red star
+  P(7,1,2,2,p.star);
+  // face details depending on dir
+  if(d===0){ P(6,5,1,1,'#3a2a1e'); P(9,5,1,1,'#3a2a1e'); } // eyes (down)
+  else if(d===1){ /* back of head: no face, more cap */ P(5,5,6,2,p.skinShade);}
+  else if(d===2){ P(6,5,1,1,'#3a2a1e'); }
+  else { P(9,5,1,1,'#3a2a1e'); }
+  // rifle (slung) for side dirs
+  if(d===3){ P(12,7,1,9,p.rifle); P(12,6,1,1,p.rifleTip); }
+  if(d===2){ P(3,7,1,9,p.rifle); P(3,6,1,1,p.rifleTip); }
+}
+
+const RED_PAL={
+  cap:'#5e6b4a', capDark:'#454f37', star:'#cf3a2c', skin:'#caa074', skinShade:'#a8825a',
+  coat:'#6b7656', coatDark:'#525d40', belt:'#3d2f1f', leg:'#525d40', legShade:'#3f4831',
+  boot:'#241f18', rifle:'#3a2c1c', rifleTip:'#888'
+};
+const ENEMY_PAL={
+  cap:'#5a4a32', capDark:'#41331f', star:'#7a6a48', skin:'#bb9468', skinShade:'#967254',
+  coat:'#6e5a3c', coatDark:'#52422a', belt:'#352818', leg:'#52422a', legShade:'#3c2f1d',
+  boot:'#221b12', rifle:'#2c2114', rifleTip:'#777'
+};
+let SOLDIER_SHEET=null, ENEMY_SHEET=null;
+
+/* ---- prop & item sprites (drawn per active level palette where needed) ---- */
+const sprites={}; // cache of small canvases by key
+
+function spr(key,w,h,drawFn){
+  if(sprites[key])return sprites[key];
+  const c=makeCanvas(w,h);const g=c.getContext('2d');
+  drawFn(g,(x,y,ww,hh,col)=>{g.fillStyle=col;g.fillRect(x,y,ww,hh);});
+  sprites[key]=c;return c;
+}
+
+/* item icons (12x12 area within 14x14) */
+function buildItemSprites(){
+  spr('it_veg',14,14,(g,P)=>{P(6,8,2,4,'#3a5a26');P(3,5,3,4,'#4f7a34');P(8,5,3,4,'#4f7a34');P(5,3,4,4,'#5e9040');P(6,2,1,2,'#74a850');P(4,6,1,1,'#bfe089');});
+  spr('it_root',14,14,(g,P)=>{P(5,3,4,4,'#c9b27a');P(4,7,2,5,'#b59a5e');P(7,7,2,4,'#b59a5e');P(6,7,2,5,'#a88c4e');P(5,11,1,1,'#6b5a30');P(8,11,1,1,'#6b5a30');});
+  spr('it_water',14,14,(g,P)=>{P(5,2,4,1,'#7a5a30');P(4,3,6,8,'#9aa86a');P(5,3,1,8,'#c4d49a');P(4,11,6,1,'#5a6a3a');P(8,4,1,5,'#5a6a3a');});
+  spr('it_belt',14,14,(g,P)=>{P(2,6,10,2,'#2b1f12');P(3,6,8,1,'#4a3320');P(9,5,3,4,'#caa83a');P(10,6,1,2,'#8a6a18');});
+  spr('it_barley',14,14,(g,P)=>{P(3,4,8,9,'#3b5a86');P(3,4,8,1,'#2c466b');P(4,5,6,2,'#4f74a8');P(4,3,6,2,'#9aaecb');P(5,2,4,1,'#6b87a8');
+    P(5,8,1,1,'#e0c04a');P(7,9,1,1,'#e0c04a');P(8,7,1,1,'#e0c04a');P(6,10,1,1,'#f0d86a');});
+  spr('it_cane',14,14,(g,P)=>{P(8,2,2,2,'#8a6a3a');P(7,4,2,8,'#7a5a32');P(7,4,1,8,'#9a7a48');P(6,11,3,1,'#5a4222');});
+  spr('it_ammo',14,14,(g,P)=>{P(3,5,8,6,'#6b5a32');P(3,5,8,1,'#8a743f');P(3,8,8,1,'#c0392b');P(5,4,1,1,'#caa83a');P(8,4,1,1,'#caa83a');});
+  spr('it_chili',14,14,(g,P)=>{P(7,2,2,2,'#4f7a34');P(6,4,3,3,'#c0392b');P(5,6,3,4,'#d23a2c');P(5,9,2,3,'#a82a20');P(6,5,1,4,'#e8554a');});
+  spr('it_wood',14,14,(g,P)=>{P(2,7,10,3,'#6b4a2a');P(2,7,10,1,'#86603a');P(3,5,8,2,'#5a3f24');P(3,5,8,1,'#7a5532');P(4,4,2,1,'#4a3320');P(8,4,2,1,'#4a3320');});
+  spr('it_wool',14,14,(g,P)=>{P(3,4,8,8,'#c8cdd6');P(3,4,8,1,'#aab0bb');P(4,5,6,2,'#dde2ea');P(4,9,6,2,'#b4bac6');P(5,7,1,1,'#9aa0ac');P(8,7,1,1,'#9aa0ac');});
+  spr('it_flint',14,14,(g,P)=>{P(4,5,6,5,'#3a3f47');P(4,5,3,2,'#5a606a');P(8,8,2,2,'#222');P(5,4,2,1,'#cdd6e0');P(9,6,1,1,'#9adcff');});
+  spr('it_liquor',14,14,(g,P)=>{P(6,2,2,2,'#3a2a1a');P(5,4,4,8,'#9a6a2a');P(5,4,1,8,'#c89a4a');P(6,6,2,5,'#b5853a');P(5,11,4,1,'#5a3f1a');});
+  // ---- items for levels 3–7 ----
+  spr('it_bandage',14,14,(g,P)=>{P(3,4,8,6,'#e8e4dc');P(3,4,8,1,'#cfcabf');P(3,9,8,1,'#cfcabf');P(6,4,2,6,'#d9d4ca');P(6,5,2,4,'#c0392b');P(5,6,4,2,'#c0392b');});
+  spr('it_grain',14,14,(g,P)=>{P(4,3,6,2,'#7a5a32');P(3,5,8,7,'#caa86a');P(3,5,8,1,'#d8b87a');P(3,11,8,1,'#a8884a');P(5,7,1,1,'#8a6a3a');P(8,8,1,1,'#8a6a3a');});
+  spr('it_canteen',14,14,(g,P)=>{P(6,2,2,2,'#4a4038');P(4,4,6,8,'#5a7a4a');P(4,4,1,8,'#74986a');P(4,11,6,1,'#3f5a34');P(6,6,2,3,'#cdd6b0');});
+  spr('it_rope',14,14,(g,P)=>{P(4,4,4,3,'#8a909a');P(5,5,2,1,'#3a3f47');P(7,7,4,3,'#8a909a');P(8,8,2,1,'#3a3f47');P(4,9,4,3,'#8a909a');P(5,10,2,1,'#3a3f47');P(4,4,4,1,'#aab0ba');});
+  spr('it_torchwood',14,14,(g,P)=>{P(6,7,2,5,'#5a3f24');P(6,7,1,5,'#7a5532');P(5,4,4,3,'#ff8a3a');P(6,2,2,3,'#ffd27a');P(5,5,1,1,'#ffae3a');});
+  spr('it_salt',14,14,(g,P)=>{P(3,9,8,3,'#e8e8e8');P(3,9,8,1,'#ffffff');P(5,7,4,2,'#f4f4f4');P(6,6,2,1,'#ffffff');P(4,11,8,1,'#c8c8c8');});
+  spr('it_map',14,14,(g,P)=>{P(3,3,8,9,'#d9cda8');P(3,3,8,1,'#c4b890');P(3,11,8,1,'#b3a884');P(4,5,6,1,'#8a7a4a');P(4,7,6,1,'#8a7a4a');P(4,9,4,1,'#8a7a4a');P(7,6,1,1,'#c0392b');P(3,3,1,9,'#b3a884');P(10,3,1,9,'#b3a884');});
+  spr('it_flag_red',14,14,(g,P)=>{P(4,2,1,11,'#7a5a32');P(5,2,6,4,'#c0392b');P(5,2,6,1,'#e0483a');P(7,3,1,1,'#e0b04a');P(4,12,2,1,'#5a4222');});
+  spr('it_medal',14,14,(g,P)=>{P(5,2,2,3,'#c0392b');P(7,2,2,3,'#a82a20');P(5,5,4,4,'#e0b04a');P(5,5,4,1,'#f0d86a');P(6,6,2,2,'#caa05a');P(4,6,1,2,'#caa05a');P(9,6,1,2,'#caa05a');});
+  spr('it_strawshoe',14,14,(g,P)=>{P(3,7,8,3,'#caa86a');P(3,7,8,1,'#d8b87a');P(3,10,8,1,'#a8884a');P(4,6,6,1,'#b89858');P(5,8,1,1,'#8a6a3a');P(7,8,1,1,'#8a6a3a');P(9,8,1,1,'#8a6a3a');});
+}
+
+/* tile rendering: pre-render variants into canvases */
+function buildTileVariants(level){
+  const T=level.tiles;
+  const out={};
+  for(const id in T){
+    const def=T[id];
+    if(def.water){
+      // animated frames
+      out[id]={frames:[]};
+      for(let fr=0;fr<4;fr++){
+        const c=makeCanvas(TILE,TILE);const g=c.getContext('2d');
+        def.draw(g,(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h);},0,fr);
+        out[id].frames.push(c);
+      }
+    } else {
+      out[id]={variants:[]};
+      const n=def.variants||4;
+      for(let v=0;v<n;v++){
+        const c=makeCanvas(TILE,TILE);const g=c.getContext('2d');
+        def.draw(g,(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h);},v,0);
+        out[id].variants.push(c);
+      }
+    }
+  }
+  return out;
+}
+
+/* =====================================================================
+   LEVEL DEFINITIONS
+   tile ids: G ground, S soft(slow), H hazard, W water/block-death, P path, R solid(block)
+   ===================================================================== */
+function noise16(g,x,y,base,spots){ // helper used by draws? inline below instead
+}
+
+const LEVELS=[
+ /* -------- LEVEL 0 : grassland -------- */
+ {
+  key:'grass', no:'壹', name:'穿越松潘草地', desc:'生存 · 探索', play:true,
+  survival:{name:'饥饿', max:100, drain:1.05, low:20, lowDmg:4.2,
+            barColor:'#7a9a3e', barLow:'#c0392b', icon:'stomach', restoreWp:24},
+  ambient:'#1a2410', ambientAlpha:0.34, lightTint:'#10180a',
+  weather:'rain', viewRadius:5.4,
+  music:{root:220, scale:[0,3,5,7,10], lead:'flute', tempo:0.62, drone:55},
+  startMsg:'七天七夜的草地。在饥饿夺去你之前,抵达<b>班佑</b>。', objType:'reach',
+  wpNames:['出发地','色既坝','年朵坝','无名沼','班佑'],
+  hint:'踩入泥沼会减速 · 绿色毒瘴持续掉血 · 路标可恢复体力',
+  loot:['it_veg','it_root','it_water','it_belt','it_cane'],
+  hidden:{spr:'it_barley', name:'青稞袋', achieve:'希望之种'},
+  tiles:{
+    G:{ground:1,speed:1,variants:5,draw:(g,P,v)=>{
+        P(0,0,16,16,'#46583a');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*40,j*7);if(h>0.86)P(i,j,1,1,'#54693f');else if(h<0.10)P(i,j,1,1,'#3a4a2f');}
+        // blades
+        for(let b=0;b<6;b++){const bx=2+((v*53+b*97)%13),by=3+((v*31+b*61)%11);P(bx,by,1,2,'#688049');P(bx,by-1,1,1,'#7c9656');}
+        if(v%2)P(3+(v%9),2+(v%6),1,1,'#b5a85a');
+    }},
+    S:{soft:1,speed:0.5,variants:4,draw:(g,P,v)=>{
+        P(0,0,16,16,'#2a2418');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*3+v,j*5);if(h>0.8)P(i,j,1,1,'#33291b');}
+        // oily bubbles
+        for(let b=0;b<3;b++){const bx=2+((v*41+b*53)%11),by=3+((v*23+b*37)%10);P(bx,by,2,2,'#3c3220');P(bx,by,1,1,'#574a30');}
+        P(0,15,16,1,'#1f1a11');
+    }},
+    H:{hazard:1,dmg:6,speed:0.85,variants:4,draw:(g,P,v)=>{
+        P(0,0,16,16,'#3f5226');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*9,j*3+v);if(h>0.82)P(i,j,1,1,'#4f6a30');}
+        for(let b=0;b<5;b++){const bx=(v*37+b*53)%15,by=(v*19+b*41)%15;P(bx,by,1,1,'#9ab85a');}
+    }},
+    W:{water:1,block:1,death:1,draw:(g,P,v,fr)=>{
+        P(0,0,16,16,'#152027');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+fr*4,j*2);if(h>0.9)P(i,j,1,1,'#27414c');}
+        const off=fr*2;
+        for(let l=0;l<3;l++){const yy=(l*6+off)%16;P(0,yy,16,1,'#22363f');P(((fr*3)%14),yy,4,1,'#3a5a66');}
+    }},
+    P:{ground:1,speed:1,variants:4,draw:(g,P,v)=>{
+        P(0,0,16,16,'#544631');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*5+v,j*7);if(h>0.85)P(i,j,1,1,'#5f5038');else if(h<0.12)P(i,j,1,1,'#473a28');}
+        // footprint dimples
+        P(4,5,2,1,'#3f3322');P(9,9,2,1,'#3f3322');
+    }},
+  }
+ },
+
+ /* -------- LEVEL 1 : snow mountain -------- */
+ {
+  key:'snow', no:'贰', name:'翻越夹金山', desc:'体温 · 严寒', play:true,
+  survival:{name:'体温', max:100, drain:2.15, low:30, lowDmg:4.8,
+            barColor:'#5aa0d4', barLow:'#c0392b', icon:'temp', restoreWp:30, fire:true},
+  ambient:'#1a2636', ambientAlpha:0.30, lightTint:'#16243a',
+  weather:'snow', viewRadius:5.0,
+  music:{root:262, scale:[0,2,4,7,9], lead:'flute', tempo:0.5, drone:65},
+  startMsg:'空气稀薄,寒风刺骨。靠近<b>篝火</b>取暖,抵达<b>山顶红旗</b>。', objType:'reach',
+  wpNames:['雪线营地','冰瀑','风口','雪檐','山顶红旗'],
+  hint:'靠近篝火回升体温 · 蓝色冰面会打滑 · 辣椒/烈酒御寒',
+  loot:['it_chili','it_wood','it_wool','it_flint','it_liquor'],
+  hidden:{spr:'it_wool', name:'羊毛衣', achieve:'雪洞遗赠'},
+  tiles:{
+    G:{ground:1,speed:0.85,variants:5,draw:(g,P,v)=>{
+        P(0,0,16,16,'#c4cdd9');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*40,j*7);if(h>0.9)P(i,j,1,1,'#e7eef6');else if(h<0.12)P(i,j,1,1,'#aeb8c6');}
+        // wind ridges
+        P(0,4+(v%6),16,1,'#b4bdcb');P(0,11-(v%5),16,1,'#b8c1ce');
+        if(hash2(v,7)>0.4)P(3+(v%9),3+(v%8),1,1,'#ffffff');
+    }},
+    S:{soft:1,speed:0.55,variants:4,draw:(g,P,v)=>{ // deep snow
+        P(0,0,16,16,'#b0bac8');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*3+v,j*5);if(h>0.85)P(i,j,1,1,'#9aa5b6');}
+        P(2,3,3,2,'#c8d1dd');P(9,8,3,2,'#c8d1dd');P(5,11,3,2,'#a4afbe');
+    }},
+    H:{slip:1,speed:1,variants:4,draw:(g,P,v)=>{ // ice (slippery)
+        P(0,0,16,16,'#9fbdd6');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*9,j*3);if(h>0.86)P(i,j,1,1,'#c2dcee');}
+        P(2,2,8,1,'#d6ecf8');P(4,9,7,1,'#bcdaee');P(3,13,5,1,'#8fb3cf');
+    }},
+    W:{water:1,block:1,death:1,draw:(g,P,v,fr)=>{ // crevasse
+        P(0,0,16,16,'#0e1a28');
+        P(0,0,16,2,'#9fc6e2');P(0,2,16,1,'#5a86a6');
+        P(0,14,16,2,'#9fc6e2');P(0,13,16,1,'#5a86a6');
+        for(let i=0;i<16;i++){const h=hash2(i,fr);if(h>0.7)P(i,3+((i+fr)%9),1,1,'#16283a');}
+    }},
+    P:{ground:1,speed:0.95,variants:4,draw:(g,P,v)=>{ // packed trail
+        P(0,0,16,16,'#aab4c2');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*5+v,j*7);if(h>0.85)P(i,j,1,1,'#c0c9d6');else if(h<0.12)P(i,j,1,1,'#929dad');}
+        P(4,5,2,1,'#8a95a5');P(9,9,2,1,'#8a95a5');
+    }},
+    R:{block:1,variants:4,draw:(g,P,v)=>{ // rock
+        P(0,0,16,16,'#4a505a');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v,j*2);if(h>0.82)P(i,j,1,1,'#5a616c');else if(h<0.14)P(i,j,1,1,'#3a3f47');}
+        P(2,2,5,2,'#5e656f');P(9,7,4,3,'#3c424b');P(0,13,16,3,'#d6e2ee'); // snow cap on rock
+        P(0,12,16,1,'#aec0d2');
+    }},
+  }
+ },
+
+ /* locked / planned levels (menu only) */
+ /* -------- LEVEL 2 : Luding Bridge (night assault, ash) -------- */
+ {
+  key:'luding', no:'叁', name:'飞夺泸定桥', desc:'铁索 · 强攻', play:true,
+  survival:{name:'斗志', max:100, drain:1.4, low:25, lowDmg:4.0,
+            barColor:'#d4843a', barLow:'#c0392b', icon:'morale', restoreWp:28},
+  ambient:'#2a1410', ambientAlpha:0.40, lightTint:'#2a1008',
+  weather:'ash', viewRadius:4.8,
+  music:{root:196, scale:[0,2,3,7,8], lead:'flute', tempo:0.70, drone:49},
+  startMsg:'大渡河咆哮,铁索横空。冒着弹雨夺取<b>泸定桥</b>!', objType:'reach',
+  wpNames:['安顺场','马鞍山','桥西工事','铁索桥头','泸定城'],
+  hint:'急流坠河即亡 · 火力封锁区会持续掉血 · 夺取据点可鼓舞斗志',
+  loot:['it_ammo','it_ammo','it_bandage','it_grain','it_liquor'],
+  drops:['it_ammo','it_ammo','it_bandage'],
+  hidden:{spr:'it_rope', name:'夺桥铁索', achieve:'勇士飞夺'},
+  props:['boulder','debris','torch','crate','debris'],
+  enemyCount:9, enemyHp:46, enemyDmg:9,
+  tiles:{
+    G:{ground:1,speed:1,variants:5,draw:(g,P,v)=>{
+        P(0,0,16,16,'#3a322a');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*40,j*7);if(h>0.88)P(i,j,1,1,'#463c30');else if(h<0.12)P(i,j,1,1,'#2e271f');}
+        if(v%2)P(3+(v%9),4+(v%6),2,1,'#4a3d2e');
+    }},
+    S:{soft:1,speed:0.5,variants:4,draw:(g,P,v)=>{
+        P(0,0,16,16,'#2e2a22');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*3+v,j*5);if(h>0.82)P(i,j,1,1,'#38332a');}
+        P(0,15,16,1,'#221e17');
+    }},
+    H:{hazard:1,dmg:6,speed:0.9,variants:4,draw:(g,P,v)=>{ // burning works
+        P(0,0,16,16,'#4a2418');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*9,j*3+v);if(h>0.84)P(i,j,1,1,'#5e2e1a');}
+        for(let b=0;b<4;b++){const bx=(v*37+b*53)%15,by=(v*19+b*41)%15;P(bx,by,1,1,'#ff8a3a');}
+    }},
+    W:{water:1,block:1,death:1,draw:(g,P,v,fr)=>{ // Dadu rapids
+        P(0,0,16,16,'#16242e');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+fr*4,j*2);if(h>0.9)P(i,j,1,1,'#27414c');}
+        const off=fr*3; for(let l=0;l<4;l++){const yy=(l*5+off)%16;P(((fr*4)%14),yy,5,1,'#5a8090');P(0,yy,16,1,'#1e3540');}
+    }},
+    R:{block:1,variants:4,draw:(g,P,v)=>{ // bank rock
+        P(0,0,16,16,'#3e4148');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v,j*2);if(h>0.82)P(i,j,1,1,'#4a4d55');else if(h<0.14)P(i,j,1,1,'#2e3036');}
+        P(2,2,5,2,'#4e515a');P(9,8,4,3,'#303239');
+    }},
+    P:{ground:1,speed:1,variants:4,draw:(g,P,v)=>{ // bridge planks / chains
+        P(0,0,16,16,'#5a4630');
+        P(0,3,16,1,'#3f3322');P(0,8,16,1,'#3f3322');P(0,13,16,1,'#3f3322');
+        for(let i=0;i<16;i++)if(hash2(i,v)>0.7)P(i,1,1,1,'#6a5236');
+        P(7,0,1,16,'#7a8088'); // iron chain seam
+    }},
+  }
+ },
+
+ /* -------- LEVEL 3 : Crossing the Chishui (foggy night, stealth) -------- */
+ {
+  key:'chishui', no:'肆', name:'四渡赤水', desc:'机动 · 潜行', play:true,
+  survival:{name:'体力', max:100, drain:1.2, low:22, lowDmg:3.6,
+            barColor:'#9a8a4a', barLow:'#c0392b', icon:'stamina', restoreWp:26},
+  ambient:'#141a20', ambientAlpha:0.38, lightTint:'#101820',
+  weather:'fog', viewRadius:4.2,
+  music:{root:174, scale:[0,2,4,5,9], lead:'flute', tempo:0.55, drone:44},
+  startMsg:'浓雾蔽月,四渡赤水。趁夜穿插,神出鬼没抵达<b>赤水河东</b>。', objType:'reach',
+  wpNames:['土城','二郎滩','茅台渡口','太平渡','赤水河东'],
+  hint:'雾夜视野极短 · 红浊河水深不可渡 · 密林会拖慢脚步',
+  loot:['it_grain','it_canteen','it_strawshoe','it_ammo','it_salt'],
+  drops:['it_ammo','it_grain','it_canteen'],
+  hidden:{spr:'it_map', name:'缴获作战地图', achieve:'运筹帷幄'},
+  props:['sand','sand','bamboo','debris','cattail'],
+  enemyCount:5, enemyHp:40,
+  tiles:{
+    G:{ground:1,speed:1,variants:5,draw:(g,P,v)=>{ // red-earth valley
+        P(0,0,16,16,'#5a3a2a');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*40,j*7);if(h>0.88)P(i,j,1,1,'#6a4632');else if(h<0.12)P(i,j,1,1,'#4a2e20');}
+        if(v%2)P(4+(v%8),3+(v%6),2,1,'#6e4a34');
+    }},
+    S:{soft:1,speed:0.55,variants:4,draw:(g,P,v)=>{ // riverbank sand
+        P(0,0,16,16,'#6a4a32');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*3+v,j*5);if(h>0.82)P(i,j,1,1,'#7a5638');}
+    }},
+    H:{speed:0.6,variants:4,draw:(g,P,v)=>{ // dense thicket (slows, no dmg)
+        P(0,0,16,16,'#2a3a26');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*9,j*3+v);if(h>0.7)P(i,j,1,1,'#34492e');else if(h<0.2)P(i,j,1,1,'#223020');}
+        for(let b=0;b<4;b++){const bx=(v*37+b*53)%14,by=(v*19+b*41)%13;P(bx,by,1,2,'#3e5a34');}
+    }},
+    W:{water:1,block:1,death:1,draw:(g,P,v,fr)=>{ // red Chishui river
+        P(0,0,16,16,'#3a2420');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+fr*4,j*2);if(h>0.9)P(i,j,1,1,'#5a342a');}
+        const off=fr*2; for(let l=0;l<3;l++){const yy=(l*6+off)%16;P(0,yy,16,1,'#4a2c24');P(((fr*3)%14),yy,4,1,'#7a4636');}
+    }},
+    P:{ground:1,speed:1,variants:4,draw:(g,P,v)=>{ // march path
+        P(0,0,16,16,'#6a5238');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*5+v,j*7);if(h>0.85)P(i,j,1,1,'#765c40');else if(h<0.12)P(i,j,1,1,'#5a4630');}
+        P(4,5,2,1,'#4f3d28');P(9,9,2,1,'#4f3d28');
+    }},
+  }
+ },
+
+ /* -------- LEVEL 4 : Lazikou Pass (cliff assault, ash night) -------- */
+ {
+  key:'lazikou', no:'伍', name:'激战腊子口', desc:'攀崖 · 攻坚', play:true,
+  survival:{name:'体力', max:100, drain:1.5, low:26, lowDmg:4.2,
+            barColor:'#b08a4a', barLow:'#c0392b', icon:'stamina', restoreWp:30, fire:true},
+  ambient:'#1a1814', ambientAlpha:0.42, lightTint:'#16120c',
+  weather:'ash', viewRadius:4.6,
+  music:{root:208, scale:[0,1,5,7,8], lead:'flute', tempo:0.72, drone:52},
+  startMsg:'天险一线,绝壁夹峙。攀崖奇袭,攻克<b>腊子口</b>碉堡!', objType:'reach',
+  wpNames:['谷口','隘路','绝壁','碉堡','腊子口顶'],
+  hint:'绝壁不可逾越,沿栈道前行 · 碉堡火力区致命 · 篝火可恢复体力',
+  loot:['it_ammo','it_ammo','it_bandage','it_torchwood','it_grain'],
+  drops:['it_ammo','it_ammo','it_bandage'],
+  hidden:{spr:'it_torchwood', name:'“云贵川”的火把', achieve:'飞兵奇袭'},
+  props:['boulder','boulder','debris','torch','crate'],
+  enemyCount:8, enemyHp:48, enemyDmg:9,
+  tiles:{
+    G:{ground:1,speed:1,variants:5,draw:(g,P,v)=>{ // gorge floor scree
+        P(0,0,16,16,'#3a382f');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*40,j*7);if(h>0.86)P(i,j,1,1,'#46443a');else if(h<0.14)P(i,j,1,1,'#2e2c25');}
+    }},
+    S:{soft:1,speed:0.5,variants:4,draw:(g,P,v)=>{ // loose rockfall
+        P(0,0,16,16,'#322f28');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*3+v,j*5);if(h>0.8)P(i,j,1,1,'#3c3930');}
+        P(3,4,3,2,'#403d33');P(9,9,3,2,'#2a2820');
+    }},
+    H:{hazard:1,dmg:6.5,speed:0.95,variants:4,draw:(g,P,v)=>{ // pillbox fire zone
+        P(0,0,16,16,'#3e2418');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*9,j*3+v);if(h>0.84)P(i,j,1,1,'#522e1c');}
+        for(let b=0;b<3;b++){const bx=(v*37+b*53)%15,by=(v*19+b*41)%15;P(bx,by,1,1,'#ffae3a');}
+    }},
+    W:{water:1,block:1,death:1,draw:(g,P,v,fr)=>{ // Lazi river torrent
+        P(0,0,16,16,'#18222a');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+fr*4,j*2);if(h>0.9)P(i,j,1,1,'#28424c');}
+        const off=fr*3; for(let l=0;l<3;l++){const yy=(l*6+off)%16;P(((fr*4)%13),yy,5,1,'#4a7080');}
+    }},
+    R:{block:1,variants:4,draw:(g,P,v)=>{ // sheer cliff
+        P(0,0,16,16,'#42454d');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v,j*2);if(h>0.8)P(i,j,1,1,'#4e515a');else if(h<0.16)P(i,j,1,1,'#2e3036');}
+        P(3,0,1,16,'#2a2c32');P(10,0,1,16,'#363840'); // vertical strata
+        P(0,0,16,2,'#2a2c32');
+    }},
+    P:{ground:1,speed:0.95,variants:4,draw:(g,P,v)=>{ // cliff catwalk
+        P(0,0,16,16,'#534632');
+        P(0,4,16,1,'#3a2e1f');P(0,11,16,1,'#3a2e1f');
+        for(let i=0;i<16;i++)if(hash2(i,v)>0.72)P(i,1,1,1,'#625034');
+        P(0,15,16,1,'#2e2418');
+    }},
+  }
+ },
+
+ /* -------- LEVEL 5 : Battle of the Xiang River (rain night, breakout) -------- */
+ {
+  key:'xiangjiang', no:'陆', name:'血战湘江', desc:'涉水 · 突围', play:true,
+  survival:{name:'渡江', max:100, drain:1.8, low:28, lowDmg:4.6,
+            barColor:'#5a8ac0', barLow:'#c0392b', icon:'water', restoreWp:30},
+  ambient:'#14181f', ambientAlpha:0.40, lightTint:'#101620',
+  weather:'rain', viewRadius:4.8,
+  music:{root:165, scale:[0,2,3,7,10], lead:'flute', tempo:0.6, drone:41},
+  startMsg:'枪林弹雨,血染湘江。强渡天险,杀出一条<b>突围之路</b>!', objType:'reach',
+  wpNames:['湘江东岸','渡口','浮桥','西岸滩头','越城岭'],
+  hint:'江水湍急坠之即亡 · 弹雨封锁滩头持续掉血 · 抢占渡口可喘息',
+  loot:['it_ammo','it_ammo','it_bandage','it_grain','it_canteen'],
+  drops:['it_ammo','it_ammo','it_bandage'],
+  hidden:{spr:'it_flag_red', name:'染血军旗', achieve:'向死而生'},
+  props:['cattail','cattail','debris','boulder','reed'],
+  enemyCount:10, enemyHp:42, enemyDmg:9,
+  tiles:{
+    G:{ground:1,speed:1,variants:5,draw:(g,P,v)=>{
+        P(0,0,16,16,'#33302a');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*40,j*7);if(h>0.88)P(i,j,1,1,'#3d3930');else if(h<0.12)P(i,j,1,1,'#272420');}
+        if(v%2)P(4+(v%8),5+(v%5),2,1,'#3a352c');
+    }},
+    S:{soft:1,speed:0.5,variants:4,draw:(g,P,v)=>{ // muddy bank
+        P(0,0,16,16,'#2a2722');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*3+v,j*5);if(h>0.8)P(i,j,1,1,'#332f28');}
+        P(0,15,16,1,'#201d18');
+    }},
+    H:{hazard:1,dmg:5.5,speed:0.9,variants:4,draw:(g,P,v)=>{ // shellfire shoal
+        P(0,0,16,16,'#3a2a26');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*9,j*3+v);if(h>0.84)P(i,j,1,1,'#4a302a');}
+        for(let b=0;b<4;b++){const bx=(v*37+b*53)%15,by=(v*19+b*41)%15;P(bx,by,2,1,'#5a3028');}
+    }},
+    W:{water:1,block:1,death:1,draw:(g,P,v,fr)=>{ // Xiang river
+        P(0,0,16,16,'#141e28');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+fr*4,j*2);if(h>0.9)P(i,j,1,1,'#243c48');}
+        const off=fr*3; for(let l=0;l<4;l++){const yy=(l*5+off)%16;P(((fr*4)%14),yy,5,1,'#5a808e');P(0,yy,16,1,'#1c303a');}
+    }},
+    R:{block:1,variants:4,draw:(g,P,v)=>{ // reef
+        P(0,0,16,16,'#3a3d44');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v,j*2);if(h>0.82)P(i,j,1,1,'#454850');else if(h<0.14)P(i,j,1,1,'#2c2f35');}
+        P(2,2,5,2,'#484b54');
+    }},
+    P:{ground:1,speed:1,variants:4,draw:(g,P,v)=>{ // pontoon
+        P(0,0,16,16,'#54473a');
+        P(0,3,16,1,'#3a2e22');P(0,8,16,1,'#3a2e22');P(0,13,16,1,'#3a2e22');
+        for(let i=0;i<16;i++)if(hash2(i,v)>0.72)P(i,5,1,1,'#5e4e3a');
+    }},
+  }
+ },
+
+ /* -------- LEVEL 6 : Grand Reunion (clear/petal, victory) -------- */
+ {
+  key:'huishi', no:'柒', name:'三军大会师', desc:'胜利 · 纪念', play:true,
+  survival:{name:'士气', max:100, drain:0.3, low:10, lowDmg:1.0,
+            barColor:'#e0b04a', barLow:'#c0392b', icon:'morale', restoreWp:40, fire:true},
+  ambient:'#241c10', ambientAlpha:0.18, lightTint:'#1a1408',
+  weather:'petal', viewRadius:6.5,
+  music:{root:262, scale:[0,2,4,5,7,9], lead:'flute', tempo:0.5, drone:65},
+  startMsg:'长征到此,三军会宁。汇入欢腾的人海,奔向<b>会师红旗</b>!', objType:'reach',
+  wpNames:['界石铺','静宁','会宁城','文庙','会师红旗'],
+  hint:'天高云阔,胜利在望 · 沿迎接大道直抵会师广场',
+  loot:['it_grain','it_grain','it_liquor','it_salt','it_bandage'],
+  drops:['it_grain'],
+  hidden:{spr:'it_medal', name:'会师纪念章', achieve:'三军会师'},
+  props:['banner','banner','crate','sand','banner'],
+  enemyCount:0,
+  tiles:{
+    G:{ground:1,speed:1,variants:5,draw:(g,P,v)=>{ // warm loess plateau
+        P(0,0,16,16,'#9a7a4a');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*40,j*7);if(h>0.88)P(i,j,1,1,'#a98856');else if(h<0.12)P(i,j,1,1,'#86683c');}
+        if(v%2)P(4+(v%8),3+(v%6),2,1,'#b09058');
+    }},
+    S:{soft:1,speed:0.7,variants:4,draw:(g,P,v)=>{ // soft tilled earth
+        P(0,0,16,16,'#8a6a3e');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*3+v,j*5);if(h>0.82)P(i,j,1,1,'#977644');}
+        P(0,5,16,1,'#7c5e36');P(0,11,16,1,'#7c5e36');
+    }},
+    H:{speed:1,variants:4,draw:(g,P,v)=>{ // festive red carpet (no harm)
+        P(0,0,16,16,'#9a4438');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+v*9,j*3+v);if(h>0.85)P(i,j,1,1,'#aa5044');}
+        P(0,0,16,1,'#caa05a');P(0,15,16,1,'#caa05a');
+    }},
+    W:{water:1,block:1,death:1,draw:(g,P,v,fr)=>{ // Yan river
+        P(0,0,16,16,'#2a3a44');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i+fr*4,j*2);if(h>0.9)P(i,j,1,1,'#3a5462');}
+        const off=fr*2; for(let l=0;l<3;l++){const yy=(l*6+off)%16;P(0,yy,16,1,'#243440');}
+    }},
+    P:{ground:1,speed:1,variants:4,draw:(g,P,v)=>{ // welcome avenue
+        P(0,0,16,16,'#a88a52');
+        for(let i=0;i<16;i++)for(let j=0;j<16;j++){const h=hash2(i*5+v,j*7);if(h>0.85)P(i,j,1,1,'#b6985c');else if(h<0.12)P(i,j,1,1,'#947a48');}
+        P(7,0,2,16,'#9a4438'); // red carpet runner
+    }},
+  }
+ },
+];
+
+/* =====================================================================
+   AUDIO  (synth 民乐-flavoured BGM + SFX, no samples)
+   ===================================================================== */
+const Audio_={
+  ctx:null, master:null, musicGain:null, muted:false, started:false,
+  cfg:null, nextNote:0, step:0, timer:null,
+  init(){
+    if(this.ctx)return;
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext;
+      this.ctx=new AC();
+      this.master=this.ctx.createGain(); this.master.gain.value=0.9; this.master.connect(this.ctx.destination);
+      this.musicGain=this.ctx.createGain(); this.musicGain.gain.value=0.0; this.musicGain.connect(this.master);
+    }catch(e){ this.ctx=null; }
+  },
+  resume(){ if(this.ctx&&this.ctx.state==='suspended') this.ctx.resume(); },
+  setMute(m){ this.muted=m; if(this.master) this.master.gain.value=m?0:0.9; },
+  /* simple instrument: type + envelope, routed through optional vibrato */
+  tone(freq,t,dur,type,gain,target,opt={}){
+    if(!this.ctx)return;
+    const o=this.ctx.createOscillator(); o.type=type; o.frequency.value=freq;
+    const g=this.ctx.createGain();
+    const a=opt.a??0.01, d=opt.d??dur*0.5, peak=gain;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(peak,t+a);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0001,peak*0.25),t+a+d);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(target||this.musicGain);
+    if(opt.vib){
+      const lfo=this.ctx.createOscillator(); lfo.frequency.value=opt.vib; const la=this.ctx.createGain();
+      la.gain.value=opt.vibAmt||3; lfo.connect(la); la.connect(o.frequency); lfo.start(t); lfo.stop(t+dur);
+    }
+    if(opt.filter){
+      const f=this.ctx.createBiquadFilter(); f.type='lowpass'; f.frequency.value=opt.filter;
+      o.disconnect(); o.connect(f); f.connect(g);
+    }
+    o.start(t); o.stop(t+dur+0.02);
+  },
+  noteFreq(root,semi){ return root*Math.pow(2,semi/12); },
+  startMusic(cfg){
+    if(!this.ctx)return;
+    this.cfg=cfg; this.step=0; this.nextNote=this.ctx.currentTime+0.1;
+    this.musicGain.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.musicGain.gain.setValueAtTime(this.musicGain.gain.value, this.ctx.currentTime);
+    this.musicGain.gain.linearRampToValueAtTime(0.16, this.ctx.currentTime+2.5);
+    if(this.timer) clearInterval(this.timer);
+    // drone
+    this.droneNode && this.droneNode.stop&&this.droneNode.stop();
+    this.startDrone(cfg.drone);
+    this.timer=setInterval(()=>this.sched(),60);
+  },
+  startDrone(f){
+    if(!this.ctx)return;
+    const o=this.ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
+    const o2=this.ctx.createOscillator(); o2.type='sine'; o2.frequency.value=f*1.5;
+    const g=this.ctx.createGain(); g.gain.value=0.04;
+    o.connect(g); o2.connect(g); g.connect(this.musicGain);
+    o.start(); o2.start(); this.droneNode=o; this.drone2=o2; this.droneGain=g;
+  },
+  stopMusic(){
+    if(!this.ctx)return;
+    this.musicGain.gain.cancelScheduledValues(this.ctx.currentTime);
+    this.musicGain.gain.linearRampToValueAtTime(0,this.ctx.currentTime+0.6);
+    if(this.timer){clearInterval(this.timer);this.timer=null;}
+    try{this.droneNode&&this.droneNode.stop(this.ctx.currentTime+0.7);this.drone2&&this.drone2.stop(this.ctx.currentTime+0.7);}catch(e){}
+  },
+  sched(){
+    if(!this.ctx||!this.cfg)return;
+    const cfg=this.cfg, beat=cfg.tempo;
+    while(this.nextNote < this.ctx.currentTime+0.3){
+      const t=this.nextNote, sc=cfg.scale, root=cfg.root;
+      // melody: pentatonic wandering, with rests
+      const pat=this.step%16;
+      const melodyHits=[0,2,3,5,6,8,10,11,13,14];
+      if(melodyHits.includes(pat)){
+        const r=Math.sin(this.step*1.7)*0.5+0.5;
+        const deg=sc[Math.floor(r*sc.length)%sc.length];
+        const oct=(this.step%32<16)?12:0;
+        const f=this.noteFreq(root, deg+oct);
+        // flute-ish: sine with vibrato + slow attack
+        this.tone(f,t,beat*1.6,'sine',0.5,null,{a:0.06,d:beat*0.8,vib:5,vibAmt:4,filter:2600});
+        // soft harmonic
+        this.tone(f*2,t,beat*0.9,'triangle',0.06,null,{a:0.04,d:beat*0.4});
+      }
+      // zither plucks on offbeats
+      if(pat%4===2){
+        const deg=sc[(this.step*2)%sc.length];
+        const f=this.noteFreq(root, deg-12);
+        this.tone(f,t,beat*0.9,'triangle',0.18,null,{a:0.005,d:beat*0.4,filter:1800});
+        this.tone(f*2.01,t,beat*0.7,'sawtooth',0.05,null,{a:0.005,d:beat*0.3,filter:1400});
+      }
+      // low drum-ish on beat 0/8
+      if(pat===0||pat===8){
+        this.tone(root/4,t,beat*0.6,'sine',0.22,null,{a:0.005,d:beat*0.3});
+      }
+      this.step++;
+      this.nextNote+=beat/2;
+    }
+  },
+  /* ---- SFX ---- */
+  sfxShot(){ if(!this.ctx)return; const t=this.ctx.currentTime;
+    const buf=this.ctx.createBufferSource(); const b=this.ctx.createBuffer(1,1200,this.ctx.sampleRate);
+    const d=b.getChannelData(0); for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+    buf.buffer=b; const f=this.ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1100; f.Q.value=0.7;
+    const g=this.ctx.createGain(); g.gain.setValueAtTime(0.4,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+    buf.connect(f); f.connect(g); g.connect(this.master); buf.start(t);
+    this.tone(140,t,0.12,'square',0.18,this.master,{a:0.001,d:0.05});
+  },
+  sfxHit(){ if(!this.ctx)return; const t=this.ctx.currentTime; this.tone(330,t,0.1,'square',0.2,this.master,{a:0.001,d:0.05}); this.tone(160,t,0.12,'sawtooth',0.12,this.master,{a:0.001,d:0.06}); },
+  sfxHurt(){ if(!this.ctx)return; const t=this.ctx.currentTime; const o=this.ctx.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(80,t+0.25); const g=this.ctx.createGain(); g.gain.setValueAtTime(0.25,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.3); o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.32); },
+  sfxPickup(){ if(!this.ctx)return; const t=this.ctx.currentTime; this.tone(660,t,0.1,'triangle',0.2,this.master,{a:0.001,d:0.05}); this.tone(990,t+0.06,0.12,'triangle',0.18,this.master,{a:0.001,d:0.06}); },
+  sfxWaypoint(){ if(!this.ctx)return; const t=this.ctx.currentTime; [523,659,784].forEach((f,i)=>this.tone(f,t+i*0.08,0.4,'sine',0.16,this.master,{a:0.01,d:0.25,vib:5})); },
+  sfxAchieve(){ if(!this.ctx)return; const t=this.ctx.currentTime; [523,659,784,1046].forEach((f,i)=>this.tone(f,t+i*0.1,0.5,'triangle',0.18,this.master,{a:0.01,d:0.3})); },
+  sfxFire(){ if(!this.ctx)return; const t=this.ctx.currentTime; this.tone(180,t,0.4,'sawtooth',0.12,this.master,{a:0.05,d:0.25,filter:600}); },
+  sfxMelee(){ if(!this.ctx)return; const t=this.ctx.currentTime; this.tone(800,t,0.08,'square',0.16,this.master,{a:0.001,d:0.04}); this.tone(400,t+0.02,0.1,'square',0.12,this.master,{a:0.001,d:0.05}); },
+};
+
+/* =====================================================================
+   INPUT
+   ===================================================================== */
+const keys={};
+const mouse={x:VIEW_W/2,y:VIEW_H/2,down:false,active:false,wx:0,wy:0};
+const touch={joyActive:false, jx:0, jy:0, fire:false, meleePulse:false};
+let isTouch=false;
+window.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  keys[k]=true;
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(e.key.toLowerCase())) e.preventDefault();
+  if(k==='p'&&game.state==='play') togglePause();
+  else if(k==='p'&&game.state==='pause') togglePause();
+  if(k==='m') toggleMute();
+});
+window.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+function screenToLogical(clientX,clientY){
+  const r=cv.getBoundingClientRect();
+  return { x:clamp((clientX-r.left)/r.width*VIEW_W,0,VIEW_W), y:clamp((clientY-r.top)/r.height*VIEW_H,0,VIEW_H) };
+}
+cv.addEventListener('mousemove',e=>{const p=screenToLogical(e.clientX,e.clientY);mouse.x=p.x;mouse.y=p.y;mouse.active=true;});
+cv.addEventListener('mousedown',e=>{e.preventDefault();mouse.down=true;mouse.active=true;});
+window.addEventListener('mouseup',()=>{mouse.down=false;});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+// touch: tap-to-shoot + virtual movement via touch drag from left side could be added; keep tap aim
+// ===== TOUCH CONTROLS: virtual joystick (move) + fire/melee buttons =====
+// (canvas no longer handles touch directly; dedicated controls avoid conflicts)
+(function setupTouch(){
+  const joyBase=document.getElementById('joyBase');
+  const joyKnob=document.getElementById('joyKnob');
+  const btnFire=document.getElementById('btnFire');
+  const btnMelee=document.getElementById('btnMelee');
+  let joyPid=-1, cx=0, cy=0, radius=46;
+
+  function joyStart(e){
+    const r=joyBase.getBoundingClientRect();
+    cx=r.left+r.width/2; cy=r.top+r.height/2; radius=r.width*0.42;
+    joyPid=e.pointerId; touch.joyActive=true;
+    try{ joyBase.setPointerCapture(e.pointerId); }catch(_){}
+    joyMove(e); e.preventDefault();
+  }
+  function joyMove(e){
+    if(e.pointerId!==joyPid) return;
+    let dx=e.clientX-cx, dy=e.clientY-cy;
+    const d=Math.hypot(dx,dy)||1;
+    const cl=Math.min(d,radius);
+    const nx=dx/d, ny=dy/d;
+    touch.jx=nx*(cl/radius); touch.jy=ny*(cl/radius);
+    joyKnob.style.transform=`translate(calc(-50% + ${nx*cl}px), calc(-50% + ${ny*cl}px))`;
+    e.preventDefault();
+  }
+  function joyEnd(e){
+    if(e.pointerId!==joyPid && joyPid!==-1) return;
+    joyPid=-1; touch.joyActive=false; touch.jx=0; touch.jy=0;
+    joyKnob.style.transform='translate(-50%,-50%)';
+  }
+  joyBase.addEventListener('pointerdown',joyStart);
+  joyBase.addEventListener('pointermove',joyMove);
+  joyBase.addEventListener('pointerup',joyEnd);
+  joyBase.addEventListener('pointercancel',joyEnd);
+  joyBase.addEventListener('lostpointercapture',joyEnd);
+
+  const bind=(el,on,off)=>{
+    el.addEventListener('pointerdown',e=>{e.preventDefault(); on(); try{el.setPointerCapture(e.pointerId);}catch(_){}});
+    el.addEventListener('pointerup',e=>{e.preventDefault(); off&&off();});
+    el.addEventListener('pointercancel',e=>{off&&off();});
+  };
+  bind(btnFire, ()=>{touch.fire=true; mouse.active=false;}, ()=>{touch.fire=false;});
+  bind(btnMelee, ()=>{touch.meleePulse=true; mouse.active=false;}, null);
+  const btnPause=document.getElementById('btnPause');
+  if(btnPause){ btnPause.addEventListener('pointerdown',e=>{e.preventDefault(); if(game.state==='play'||game.state==='pause') togglePause();}); }
+
+  function fitCanvas(){
+    if(!document.body.classList.contains('touch')){ cv.style.width=''; cv.style.height=''; return; }
+    const vw=window.innerWidth, vh=window.innerHeight, ar=VIEW_W/VIEW_H;
+    let w=vw, h=vw/ar;
+    if(h>vh){ h=vh; w=vh*ar; }
+    cv.style.width=Math.round(w)+'px';
+    cv.style.height=Math.round(h)+'px';
+  }
+  function detect(){
+    isTouch = matchMedia('(pointer:coarse)').matches || ('ontouchstart' in window) || navigator.maxTouchPoints>0;
+    document.body.classList.toggle('touch', isTouch);
+    orient(); fitCanvas();
+  }
+  function orient(){
+    const portrait = window.innerHeight > window.innerWidth;
+    document.body.classList.toggle('portrait', isTouch && portrait);
+    fitCanvas();
+  }
+  window.addEventListener('resize', ()=>{ orient(); fitCanvas(); });
+  window.addEventListener('orientationchange', ()=>setTimeout(()=>{ orient(); fitCanvas(); },200));
+  window.addEventListener('load', fitCanvas);
+  // expose so other code can re-fit after font/layout settle
+  window.__fitCanvas=fitCanvas;
+  // fallback: any real touch forces touch mode (covers in-app browsers that under-report)
+  window.addEventListener('touchstart', function(){
+    if(!isTouch){ isTouch=true; document.body.classList.add('touch'); orient(); fitCanvas(); }
+  }, {passive:true});
+  detect();
+})();
+
+
+/* =====================================================================
+   GAME STATE
+   ===================================================================== */
+const game={
+  state:'menu', levelIdx:0, level:null, tileVar:null,
+  tiles:null, explored:null, wps:[], items:[], enemies:[], bullets:[], particles:[], floaters:[], fires:[],
+  player:null, cam:{x:0,y:0}, time:0, elapsed:0,
+  weather:{mode:'none',rain:false,snow:false,ash:false,fog:false,clear:false,petal:false, drops:[], puffs:[], flash:0, gust:0},
+  objIndex:0, kills:0, gotHidden:false, hurtFlash:0, lowVig:0,
+  shakeT:0, shakeMag:0, started:false,
+};
+
+/* ---------- level generation ---------- */
+function generate(levelIdx){
+  const L=LEVELS[levelIdx];
+  const seed=(levelIdx+1)*99173 + 7;
+  const rng=mulberry32(seed);
+  const tiles=new Uint8Array(MAP_W*MAP_H); // 0 G,1 S,2 H,3 W,4 P,5 R
+  const idMap={G:0,S:1,H:2,W:3,P:4,R:5};
+  const field=smoothField(rng,MAP_W,MAP_H,6);
+  const field2=smoothField(mulberry32(seed*3+5),MAP_W,MAP_H,5);
+  const hasRock = !!L.tiles.R;
+
+  for(let y=0;y<MAP_H;y++)for(let x=0;x<MAP_W;x++){
+    const v=field[y*MAP_W+x], v2=field2[y*MAP_W+x];
+    let id=0; //G
+    if(v<0.30) id=3;             //W (pond/crevasse)
+    else if(v<0.42) id=1;        //S soft
+    else if(hasRock && v2>0.80) id=5; //R rock (snow)
+    else if(!hasRock && v2>0.80) id=2;//H hazard (grass poison)
+    tiles[y*MAP_W+x]=id;
+    // border = water/block
+    if(x<2||y<2||x>=MAP_W-2||y>=MAP_H-2) tiles[y*MAP_W+x]=3;
+  }
+
+  // waypoints along a diagonal march path
+  const wpCount=5;
+  const wps=[];
+  for(let i=0;i<wpCount;i++){
+    const t=i/(wpCount-1);
+    let wx=Math.round(lerp(7, MAP_W-8, t) + (rng()-0.5)*6);
+    let wy=Math.round(lerp(MAP_H-8, 7, t) + (rng()-0.5)*6);
+    wx=clamp(wx,5,MAP_W-6); wy=clamp(wy,5,MAP_H-6);
+    wps.push({tx:wx,ty:wy,name:L.wpNames[i],reached:i===0});
+  }
+
+  // carve corridors between consecutive wps to PATH, clear deadly tiles nearby
+  function carve(a,b){
+    let x=a.tx,y=a.ty;
+    let guard=0;
+    while((x!==b.tx||y!==b.ty)&&guard++<400){
+      // brush
+      for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+        const xx=clamp(x+dx,1,MAP_W-2),yy=clamp(y+dy,1,MAP_H-2);
+        const idx=yy*MAP_W+xx;
+        if(tiles[idx]===3||tiles[idx]===5) tiles[idx]= (dx===0&&dy===0)?4:0; // remove block, center=path
+        else if(dx===0&&dy===0 && tiles[idx]!==1) tiles[idx]=4;
+      }
+      // step toward b with small jitter
+      const dirx=Math.sign(b.tx-x), diry=Math.sign(b.ty-y);
+      if(rng()<0.5 && dirx!==0) x+=dirx; else if(diry!==0) y+=diry; else if(dirx!==0) x+=dirx;
+    }
+  }
+  for(let i=0;i<wps.length-1;i++) carve(wps[i],wps[i+1]);
+  // clear a plaza around each waypoint
+  for(const w of wps){
+    for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+      const xx=clamp(w.tx+dx,1,MAP_W-2),yy=clamp(w.ty+dy,1,MAP_H-2);
+      const idx=yy*MAP_W+xx;
+      if(tiles[idx]===3||tiles[idx]===5) tiles[idx]=0;
+    }
+  }
+
+  // helper: random walkable ground tile
+  function randGround(minDistFromCorr){
+    for(let tries=0;tries<300;tries++){
+      const x=2+Math.floor(rng()*(MAP_W-4)), y=2+Math.floor(rng()*(MAP_H-4));
+      const id=tiles[y*MAP_W+x];
+      if(id===0||id===4){ return {tx:x,ty:y}; }
+    }
+    return {tx:wps[0].tx+1,ty:wps[0].ty};
+  }
+
+  // items
+  const items=[];
+  const lootKeys=L.loot;
+  for(let i=0;i<16;i++){
+    const g=randGround();
+    const key=lootKeys[Math.floor(rng()*lootKeys.length)];
+    items.push(makeItem(key, g.tx*TILE+8, g.ty*TILE+8));
+  }
+  // ammo packs
+  for(let i=0;i<6;i++){const g=randGround();items.push(makeItem('it_ammo',g.tx*TILE+8,g.ty*TILE+8));}
+  // hidden treasure far away (corner-ish)
+  {
+    let best=null,bestd=-1;
+    for(let tries=0;tries<200;tries++){
+      const g=randGround();
+      const d=dist2(g.tx-wps[0].tx,g.ty-wps[0].ty);
+      // prefer far AND not on final waypoint line
+      if(d>bestd){bestd=d;best=g;}
+    }
+    const it=makeItem(L.hidden.spr, best.tx*TILE+8, best.ty*TILE+8);
+    it.hidden=true; it.hiddenName=L.hidden.name; it.achieve=L.hidden.achieve;
+    items.push(it);
+  }
+
+  // enemies: scatter near corridors, not too close to start
+  const enemies=[];
+  const enemyCount = L.enemyCount!=null?L.enemyCount:7;
+  for(let i=0;i<enemyCount;i++){
+    let g;
+    for(let t=0;t<80;t++){ g=randGround(); if(dist2(g.tx-wps[0].tx,g.ty-wps[0].ty)>120) break; }
+    const e=makeEnemy(g.tx*TILE+8,g.ty*TILE+8);
+    if(L.enemyHp){ e.hp=e.maxhp=L.enemyHp; }
+    if(L.enemyDmg){ e.dmg=L.enemyDmg; }
+    enemies.push(e);
+  }
+
+  // fires at every waypoint (light + warmth)
+  const fires=wps.map(w=>({x:w.tx*TILE+8,y:w.ty*TILE+8,r:46,lit:true,fuel:1}));
+
+  // props (decorative + some blocking)
+  const props=[];
+  const propTypes = L.props || ['tuft','tuft','rock'];
+  for(let i=0;i<70;i++){
+    const x=2+Math.floor(rng()*(MAP_W-4)), y=2+Math.floor(rng()*(MAP_H-4));
+    const id=tiles[y*MAP_W+x];
+    if(id===0){ props.push({type:propTypes[Math.floor(rng()*propTypes.length)],x:x*TILE+rng()*16,y:y*TILE+rng()*16,ph:rng()*6.28}); }
+  }
+
+  // assign
+  game.tiles=tiles; game.idMap=idMap;
+  game.wps=wps; game.items=items; game.enemies=enemies; game.fires=fires; game.props=props;
+  game.explored=new Uint8Array(MAP_W*MAP_H);
+  game.bullets=[]; game.particles=[]; game.floaters=[];
+
+  // player at start waypoint
+  game.player=makePlayer(wps[0].tx*TILE+8, wps[0].ty*TILE+8, L);
+  game.objIndex=1; game.kills=0; game.gotHidden=false;
+  // weather
+  const wm=L.weather||'none';
+  game.weather={mode:wm,
+    rain:wm==='rain', snow:wm==='snow', ash:wm==='ash', fog:wm==='fog',
+    clear:wm==='clear', petal:wm==='petal',
+    drops:[], puffs:[], flash:0, gust:0, gustT:rand(4,8)};
+  const w=game.weather;
+  if(w.rain||w.snow||w.ash){
+    const n = w.ash?120:160;
+    for(let i=0;i<n;i++) w.drops.push({x:rand(0,VIEW_W),y:rand(0,VIEW_H),v:rand(0.7,1.3),sz:w.ash?(rand(0,1)<0.3?2:1):1});
+  }
+  if(w.petal){
+    for(let i=0;i<70;i++) w.drops.push({x:rand(0,VIEW_W),y:rand(0,VIEW_H),v:rand(0.5,1.1),sz:rand(0,1)<0.5?2:1,sp:rand(0,6.28)});
+  }
+  if(w.fog){
+    for(let i=0;i<9;i++) w.puffs.push({x:rand(0,VIEW_W),y:rand(0,VIEW_H),r:rand(40,80),v:rand(4,11),a:rand(0.10,0.22)});
+  }
+}
+
+function makePlayer(x,y,L){
+  return {x,y,vx:0,vy:0,dir:0,frame:0,animT:0,hp:100,maxhp:100,
+    surv:L.survival.max, maxsurv:L.survival.max,
+    speed:70, baseSpeed:70, ammo:24, maxammo:99, reload:0,
+    fireCd:0, meleeCd:0, invuln:0, alive:true, hasCane:false, warmBuff:0};
+}
+function makeEnemy(x,y){
+  return {x,y,vx:0,vy:0,dir:0,frame:0,animT:0,hp:40,maxhp:40,alive:true,
+    state:'idle', alertT:0, fireCd:rand(0.5,1.5), wanderT:rand(1,3),
+    wx:0,wy:0, hurt:0, death:0};
+}
+const ITEMDEF={
+  it_veg:{name:'野菜',surv:5,hp:5},
+  it_root:{name:'草根',surv:3,hp:2},
+  it_water:{name:'净水',survSaveSec:8},
+  it_belt:{name:'半截皮带',surv:20,hp:0,story:true},
+  it_cane:{name:'木质拐杖',cane:true},
+  it_barley:{name:'青稞袋',surv:100,hp:100},
+  it_ammo:{name:'弹药',ammo:30},
+  it_chili:{name:'辣椒',surv:30,warm:6},
+  it_wood:{name:'干柴',fuel:true},
+  it_wool:{name:'羊毛衣',survSlow:true,surv:20},
+  it_flint:{name:'打火石',fuel:true},
+  it_liquor:{name:'烈酒',surv:50,warm:5},
+  it_bandage:{name:'绷带',hp:25},
+  it_grain:{name:'炒面',surv:15,hp:5},
+  it_canteen:{name:'水壶',survSaveSec:10},
+  it_rope:{name:'夺桥铁索',surv:60,hp:30},
+  it_torchwood:{name:'火把',fuel:true,warm:4,surv:10},
+  it_salt:{name:'盐巴',surv:25},
+  it_map:{name:'缴获地图',surv:50,hp:20},
+  it_flag_red:{name:'染血军旗',surv:80,hp:50},
+  it_medal:{name:'会师纪念章',surv:100,hp:100},
+  it_strawshoe:{name:'草鞋',surv:18},
+};
+function makeItem(key,x,y){ return {key,x,y,bob:Math.random()*6.28,picked:false,hidden:false}; }
+
+/* =====================================================================
+   START / FLOW
+   ===================================================================== */
+function startLevel(idx){
+  game.levelIdx=idx; game.level=LEVELS[idx];
+  document.getElementById('loadnote').style.display='block';
+  // build sprites for palette-dependent tiles
+  game.tileVar=buildTileVariants(game.level);
+  generate(idx);
+  game.state='play'; game.time=0; game.elapsed=0;
+  game.hurtFlash=0; game.lowVig=0; game.shakeT=0;
+  document.body.classList.add('playing');
+  if(window.__fitCanvas) window.__fitCanvas();
+  hideAllScreens();
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('ingameHint').textContent=game.level.hint||'';
+  setObjective();
+  showBanner(game.level.no+' · '+game.level.name, game.level.desc);
+  document.getElementById('loadnote').style.display='none';
+  // music
+  Audio_.init(); Audio_.resume(); Audio_.startMusic(game.level.music);
+}
+function hideAllScreens(){
+  ['menu','pause','win','lose'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+}
+function setObjective(){
+  const L=game.level; const total=game.wps.length;
+  const next=game.wps[game.objIndex];
+  const o=document.getElementById('objective');
+  if(next){
+    o.innerHTML=`目标:抵达 <b>${next.name}</b>　(路标 ${game.objIndex}/${total-1})`;
+  }else{
+    o.innerHTML='目标:<b>已抵达终点!</b>';
+  }
+}
+function showBanner(t1,t2){
+  const b=document.getElementById('banner');
+  b.querySelector('.t1').textContent=t1; b.querySelector('.t2').textContent=t2||'';
+  b.classList.remove('show'); void b.offsetWidth; b.classList.add('show');
+}
+function toast(msg,pin){
+  const box=document.getElementById('toast');
+  const d=document.createElement('div'); d.className='toast-msg';
+  d.innerHTML = pin?`<span class="pin">${pin}</span> ${msg}`:msg;
+  box.appendChild(d);
+  setTimeout(()=>{d.style.transition='opacity .4s';d.style.opacity='0';setTimeout(()=>d.remove(),400);},2200);
+  while(box.children.length>4) box.removeChild(box.firstChild);
+}
+function togglePause(){
+  if(game.state==='play'){game.state='pause';document.getElementById('pause').classList.remove('hidden');
+    document.getElementById('pauseObj').innerHTML=document.getElementById('objective').innerHTML;
+    if(Audio_.musicGain&&Audio_.ctx)Audio_.musicGain.gain.linearRampToValueAtTime(0.05,Audio_.ctx.currentTime+0.2);}
+  else if(game.state==='pause'){game.state='play';document.getElementById('pause').classList.add('hidden');
+    if(Audio_.musicGain&&Audio_.ctx)Audio_.musicGain.gain.linearRampToValueAtTime(0.16,Audio_.ctx.currentTime+0.3);}
+}
+function toggleMute(){
+  Audio_.setMute(!Audio_.muted);
+  toast(Audio_.muted?'已静音':'已开启声音');
+}
+function winLevel(){
+  game.state='win'; Audio_.sfxAchieve(); Audio_.stopMusic();if(window.parent !== window) window.parent.postMessage('gameA_complete','*');
+  document.body.classList.remove('playing');
+  document.getElementById('hud').classList.add('hidden');
+  const w=document.getElementById('win'); w.classList.remove('hidden');
+  const verses=[
+   '红军不怕远征难,万水千山只等闲。',
+   '更喜岷山千里雪,三军过后尽开颜。'
+  ];
+  document.getElementById('winVerse').textContent=verses[Math.min(game.levelIdx,verses.length-1)];
+  document.getElementById('winSub').textContent =
+    game.gotHidden?`你冲破了「${game.level.name}」,并寻获了 ${game.level.hidden.name}。`
+                  :`你冲破了「${game.level.name}」。`;
+  const mm=Math.floor(game.elapsed/60), ss=Math.floor(game.elapsed%60);
+  document.getElementById('winStats').innerHTML=
+    `<div><b>${game.kills}</b>歼敌</div>`+
+    `<div><b>${mm}:${ss<10?'0':''}${ss}</b>用时</div>`+
+    `<div><b>${game.gotHidden?'★':'—'}</b>成就「${game.level.hidden.achieve}」</div>`;
+  // next button only if a next *playable* level exists
+  const hasNext = LEVELS[game.levelIdx+1] && LEVELS[game.levelIdx+1].play;
+  document.getElementById('nextBtn').style.display=hasNext?'':'none';
+}
+function loseLevel(){
+  if(game.state!=='play')return;
+  game.state='lose'; Audio_.sfxHurt(); Audio_.stopMusic();
+  document.body.classList.remove('playing');
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('lose').classList.remove('hidden');
+}
+function backToMenu(){
+  game.state='menu'; Audio_.stopMusic();
+  document.body.classList.remove('playing');
+  hideAllScreens(); document.getElementById('menu').classList.remove('hidden');
+  document.getElementById('hud').classList.add('hidden');
+}
+
+/* =====================================================================
+   UPDATE
+   ===================================================================== */
+function tileIdAt(px,py){
+  const tx=Math.floor(px/TILE), ty=Math.floor(py/TILE);
+  if(tx<0||ty<0||tx>=MAP_W||ty>=MAP_H) return 3;
+  return game.tiles[ty*MAP_W+tx];
+}
+function tileDef(id){
+  const map=game.idMap; // id->name? we have idMap name->num; invert quick
+  const names=['G','S','H','W','P','R'];
+  return game.level.tiles[names[id]];
+}
+function blockedAt(px,py){
+  const id=tileIdAt(px,py); const def=tileDef(id);
+  return def?def.block:true;
+}
+function blockedBox(cx,cy,hw,hh){
+  return blockedAt(cx-hw,cy-hh)||blockedAt(cx+hw,cy-hh)||blockedAt(cx-hw,cy+hh)||blockedAt(cx+hw,cy+hh);
+}
+
+function update(dt){
+  game.time+=dt; game.elapsed+=dt;
+  const L=game.level, p=game.player;
+  if(!p)return;
+
+  // ---- input movement ----
+  let ix=0,iy=0;
+  if(keys['a']||keys['arrowleft'])ix-=1;
+  if(keys['d']||keys['arrowright'])ix+=1;
+  if(keys['w']||keys['arrowup'])iy-=1;
+  if(keys['s']||keys['arrowdown'])iy+=1;
+  const km=Math.hypot(ix,iy);
+  if(km>0){ ix/=km; iy/=km; }
+  if(touch.joyActive){ ix=touch.jx; iy=touch.jy; const tm=Math.hypot(ix,iy); if(tm>1){ ix/=tm; iy/=tm; } }
+
+  // ground props
+  const here=tileIdAt(p.x,p.y); const hereDef=tileDef(here);
+  let speedMul = hereDef && hereDef.speed!=null ? hereDef.speed : 1;
+  const onIce = hereDef && hereDef.slip;
+  const grip = onIce?3.2:16;
+  const targetVx = ix*p.speed*speedMul, targetVy=iy*p.speed*speedMul;
+  p.vx=lerp(p.vx,targetVx,clamp(grip*dt,0,1));
+  p.vy=lerp(p.vy,targetVy,clamp(grip*dt,0,1));
+
+  // collision (axis separated)
+  const hw=4, hh=3;
+  let nx=p.x+p.vx*dt;
+  if(!blockedBox(nx,p.y,hw,hh)) p.x=nx; else p.vx=0;
+  let ny=p.y+p.vy*dt;
+  if(!blockedBox(p.x,ny,hw,hh)) p.y=ny; else p.vy=0;
+  p.x=clamp(p.x,TILE,WORLD_W-TILE); p.y=clamp(p.y,TILE,WORLD_H-TILE);
+
+  // facing & animation
+  if(Math.abs(p.vx)>4||Math.abs(p.vy)>4){
+    if(Math.abs(p.vx)>Math.abs(p.vy)) p.dir = p.vx<0?2:3;
+    else p.dir = p.vy<0?1:0;
+    p.animT+=dt*Math.min(1,Math.hypot(p.vx,p.vy)/40);
+    p.frame = 1+(Math.floor(p.animT*6)%2);
+    if(game.time%0.34<dt && Math.hypot(p.vx,p.vy)>20){ /* footstep */ }
+  } else { p.frame=0; }
+
+  // ---- survival ----
+  let drain=L.survival.drain;
+  if(hereDef && hereDef.soft) drain+=0.7;            // swamp/deep snow harder
+  if(game.weather.gust>0 && L.survival.gustMul) drain*=L.survival.gustMul;
+  if(p.survSlowBuff) drain*=0.5;                      // wool
+  if(p.waterBuff>0){ drain*=0.7; p.waterBuff-=dt; }
+  // campfire warmth (snow)
+  if(L.survival.fire){
+    let nearFire=false;
+    for(const f of game.fires){ if(f.lit && dist2(f.x-p.x,f.y-p.y) < f.r*f.r){ nearFire=true; break; } }
+    if(nearFire) p.surv=Math.min(p.maxsurv, p.surv+12*dt);
+    else p.surv-=drain*dt;
+  } else {
+    p.surv-=drain*dt;
+  }
+  if(p.warmBuff>0){ p.surv=Math.min(p.maxsurv,p.surv+8*dt); p.warmBuff-=dt; }
+  p.surv=clamp(p.surv,0,p.maxsurv);
+
+  // hazard tile damage (poison)
+  if(hereDef && hereDef.dmg && p.invuln<=0){
+    p.hp-=hereDef.dmg*dt;
+    if(game.time%0.5<dt) spawnParticles(p.x,p.y-6,'#9ab85a',3);
+  }
+  // survival low -> hp loss
+  if(p.surv<=L.survival.low){
+    p.hp-=L.survival.lowDmg*dt;
+    game.lowVig=Math.min(1,game.lowVig+dt*0.8);
+  } else game.lowVig=Math.max(0,game.lowVig-dt*1.2);
+
+  if(p.invuln>0)p.invuln-=dt;
+  if(p.fireCd>0)p.fireCd-=dt;
+  if(p.meleeCd>0)p.meleeCd-=dt;
+  if(p.reload>0)p.reload-=dt;
+  if(game.hurtFlash>0)game.hurtFlash-=dt*2.5;
+  if(game.shakeT>0)game.shakeT-=dt;
+
+  // ---- aiming & shooting ----
+  // aim vector
+  let aimx,aimy;
+  if(mouse.active){
+    const worldMx=game.cam.x+mouse.x, worldMy=game.cam.y+mouse.y;
+    mouse.wx=worldMx; mouse.wy=worldMy;
+    aimx=worldMx-p.x; aimy=worldMy-p.y;
+    const am=Math.hypot(aimx,aimy)||1; aimx/=am; aimy/=am;
+  } else {
+    // touch / keyboard-only: auto-aim the nearest living enemy in view, else aim where you're heading, else facing
+    let best=null,bd=120*120;
+    for(const e of game.enemies){ if(!e.alive)continue;
+      const dx=e.x-p.x, dy=e.y-p.y, d=dx*dx+dy*dy;
+      if(d<bd){ bd=d; best=e; } }
+    if(best){ aimx=best.x-p.x; aimy=best.y-p.y; const am=Math.hypot(aimx,aimy)||1; aimx/=am; aimy/=am; }
+    else if(touch.joyActive && (Math.abs(touch.jx)+Math.abs(touch.jy))>0.15){
+      aimx=touch.jx; aimy=touch.jy; const am=Math.hypot(aimx,aimy)||1; aimx/=am; aimy/=am;
+    } else { const dv=[[0,1],[0,-1],[-1,0],[1,0]][p.dir]; aimx=dv[0];aimy=dv[1]; }
+  }
+  const wantShoot = mouse.down || keys['j'] || touch.fire;
+  if(wantShoot && p.fireCd<=0 && p.reload<=0){
+    if(p.ammo>0){
+      p.ammo--; p.fireCd=0.28;
+      // face the shot (so the soldier turns toward an auto-aimed target on touch)
+      if(Math.abs(aimx)>Math.abs(aimy)) p.dir = aimx<0?2:3; else p.dir = aimy<0?1:0;
+      const spread=(Math.random()-0.5)*0.08;
+      const ca=Math.cos(spread),sa=Math.sin(spread);
+      const dx=aimx*ca-aimy*sa, dy=aimx*sa+aimy*ca;
+      game.bullets.push({x:p.x+dx*8,y:p.y-4+dy*8,vx:dx*240,vy:dy*240,fromP:true,life:0.9,dmg:34});
+      Audio_.sfxShot();
+      spawnParticles(p.x+dx*10,p.y-4+dy*10,'#ffd27a',2);
+      if(p.ammo===0){ p.reload=1.0; toast('弹仓已空','换弹'); }
+      shake(0.05,1);
+    } else if(p.reload<=0){ p.reload=1.0; }
+  }
+  // melee bayonet
+  if((keys[' '] || touch.meleePulse) && p.meleeCd<=0){
+    touch.meleePulse=false;
+    p.meleeCd=0.5; Audio_.sfxMelee();
+    const dv=[aimx,aimy];
+    for(const e of game.enemies){ if(!e.alive)continue;
+      const ex=e.x-p.x, ey=e.y-p.y; const d=Math.hypot(ex,ey);
+      if(d<22 && (ex*dv[0]+ey*dv[1])/(d||1) > 0.2){ damageEnemy(e,60,dv[0],dv[1]); }
+    }
+    spawnParticles(p.x+dv[0]*14,p.y-4+dv[1]*14,'#dddddd',4);
+  } else if(touch.meleePulse && p.meleeCd>0){ touch.meleePulse=false; }
+
+  // ---- bullets ----
+  for(const b of game.bullets){
+    b.life-=dt; b.x+=b.vx*dt; b.y+=b.vy*dt;
+    if(blockedAt(b.x,b.y)){ b.life=0; spawnParticles(b.x,b.y,'#caa',3); continue; }
+    if(b.fromP){
+      for(const e of game.enemies){ if(!e.alive)continue;
+        if(Math.abs(e.x-b.x)<7&&Math.abs(e.y-b.y-2)<9){ damageEnemy(e,b.dmg,b.vx,b.vy); b.life=0; break; }
+      }
+    } else {
+      if(p.invuln<=0 && Math.abs(p.x-b.x)<6&&Math.abs(p.y-b.y-2)<8){
+        hurtPlayer(10); b.life=0;
+      }
+    }
+  }
+  game.bullets=game.bullets.filter(b=>b.life>0);
+
+  // ---- enemies ----
+  const detect=140;
+  for(const e of game.enemies){
+    if(!e.alive){ if(e.death>0){e.death-=dt;} continue; }
+    if(e.hurt>0)e.hurt-=dt;
+    const ex=p.x-e.x, ey=p.y-e.y; const d=Math.hypot(ex,ey);
+    if(d<detect){ e.state='alert'; e.alertT=2; }
+    else if(e.alertT>0){ e.alertT-=dt; if(e.alertT<=0)e.state='idle'; }
+
+    if(e.state==='alert'){
+      // approach to ~70px then shoot
+      const want = d>90?1:(d<60?-0.4:0);
+      const mvx=(ex/d)*want, mvy=(ey/d)*want;
+      moveEntity(e, mvx*46, mvy*46, dt);
+      e.fireCd-=dt;
+      if(e.fireCd<=0 && d<200){
+        e.fireCd=rand(1.1,1.9);
+        const bd=Math.hypot(ex,ey)||1;
+        game.bullets.push({x:e.x+(ex/bd)*8,y:e.y-4+(ey/bd)*8,vx:(ex/bd)*150,vy:(ey/bd)*150,fromP:false,life:1.6,dmg:10});
+        Audio_.sfxShot();
+      }
+      e.dir = Math.abs(ex)>Math.abs(ey)?(ex<0?2:3):(ey<0?1:0);
+    } else {
+      // wander
+      e.wanderT-=dt;
+      if(e.wanderT<=0){ e.wanderT=rand(1.5,3.5); const a=rand(0,6.28); e.wx=Math.cos(a); e.wy=Math.sin(a); if(Math.random()<0.4){e.wx=0;e.wy=0;} }
+      moveEntity(e, e.wx*22, e.wy*22, dt);
+      if(Math.abs(e.wx)>0.1||Math.abs(e.wy)>0.1) e.dir=Math.abs(e.wx)>Math.abs(e.wy)?(e.wx<0?2:3):(e.wy<0?1:0);
+    }
+    e.animT+=dt; e.frame=(Math.hypot(e.vx,e.vy)>6)?1+(Math.floor(e.animT*5)%2):0;
+  }
+
+  // ---- items pickup ----
+  for(const it of game.items){
+    if(it.picked)continue;
+    it.bob+=dt*3;
+    if(Math.abs(it.x-p.x)<11&&Math.abs(it.y-p.y)<12){
+      pickup(it);
+    }
+  }
+
+  // ---- waypoints ----
+  for(let i=0;i<game.wps.length;i++){
+    const w=game.wps[i]; if(w.reached)continue;
+    const wx=w.tx*TILE+8, wy=w.ty*TILE+8;
+    if(Math.abs(p.x-wx)<14&&Math.abs(p.y-wy)<14){
+      w.reached=true;
+      if(i===game.wps.length-1){ winLevel(); return; }
+      // restore survival, save checkpoint
+      p.surv=Math.min(p.maxsurv,p.surv+L.survival.restoreWp);
+      p.checkX=wx; p.checkY=wy;
+      game.objIndex=i+1; setObjective();
+      Audio_.sfxWaypoint();
+      showBanner('抵达 '+w.name, '体力恢复 · 已记录');
+      spawnParticles(wx,wy-6,'#e0b04a',10);
+    }
+  }
+
+  // ---- particles & floaters ----
+  for(const pa of game.particles){ pa.life-=dt; pa.x+=pa.vx*dt; pa.y+=pa.vy*dt; pa.vy+=pa.g*dt; }
+  game.particles=game.particles.filter(pa=>pa.life>0);
+  for(const fl of game.floaters){ fl.life-=dt; fl.y-=12*dt; }
+  game.floaters=game.floaters.filter(fl=>fl.life>0);
+
+  // ---- weather ----
+  const w=game.weather;
+  if(w.rain||w.snow||w.ash||w.petal){
+    w.gustT-=dt;
+    if(w.gustT<=0){ w.gust = w.gust>0?0:1; w.gustT=rand(4,9); }
+    const fall = w.snow?40 : w.ash?34 : w.petal?30 : 260;
+    for(const d of w.drops){
+      d.y+= fall*d.v*dt;
+      if(w.snow)       d.x+= Math.sin(game.time*2+d.y*0.1)*10*dt + (w.gust?40*dt:0);
+      else if(w.ash)   d.x+= (Math.sin(game.time*1.4+d.y*0.08)*8 + 22)*dt + (w.gust?30*dt:0);
+      else if(w.petal) d.x+= Math.sin(game.time*1.8+(d.sp||0))*16*dt;
+      else             d.x+= 60*dt + (w.gust?40*dt:0);
+      if(d.y>VIEW_H){d.y=-4;d.x=rand(0,VIEW_W);}
+      if(d.x>VIEW_W)d.x-=VIEW_W; if(d.x<0)d.x+=VIEW_W;
+    }
+    if(w.rain){ w.flash-=dt*3; if(Math.random()<0.0025){ w.flash=1; } }
+    if(w.ash){ w.flash-=dt*4; if(Math.random()<0.012){ w.flash=rand(0.4,0.9); } } // distant gunfire glow
+  }
+  if(w.fog){
+    for(const p of w.puffs){ p.x+=p.v*dt; if(p.x-p.r>VIEW_W){ p.x=-p.r; p.y=rand(0,VIEW_H);} }
+  }
+  if(w.clear){ w.flash-=dt*2; if(Math.random()<0.004){ w.flash=1; } } // celebratory firework pop
+
+  // fires flicker
+  for(const f of game.fires){ f.flick=0.85+Math.sin(game.time*12+f.x)*0.15; if(Math.random()<0.3)spawnFireParticle(f); }
+
+  // ---- camera ----
+  game.cam.x=clamp(p.x-VIEW_W/2, 0, WORLD_W-VIEW_W);
+  game.cam.y=clamp(p.y-VIEW_H/2, 0, WORLD_H-VIEW_H);
+
+  // ---- fog explore ----
+  const pr=L.viewRadius;
+  const ptx=Math.floor(p.x/TILE), pty=Math.floor(p.y/TILE);
+  const R=Math.ceil(pr)+1;
+  for(let dy=-R;dy<=R;dy++)for(let dx=-R;dx<=R;dx++){
+    if(dx*dx+dy*dy>R*R)continue;
+    const xx=ptx+dx, yy=pty+dy;
+    if(xx<0||yy<0||xx>=MAP_W||yy>=MAP_H)continue;
+    game.explored[yy*MAP_W+xx]=1;
+  }
+
+  // death
+  if(p.hp<=0 && p.alive){ p.alive=false; loseLevel(); }
+}
+
+function moveEntity(e,tvx,tvy,dt){
+  e.vx=lerp(e.vx,tvx,clamp(12*dt,0,1)); e.vy=lerp(e.vy,tvy,clamp(12*dt,0,1));
+  const hw=4,hh=3;
+  let nx=e.x+e.vx*dt; if(!blockedBox(nx,e.y,hw,hh))e.x=nx; else e.vx=0;
+  let ny=e.y+e.vy*dt; if(!blockedBox(e.x,ny,hw,hh))e.y=ny; else e.vy=0;
+}
+function damageEnemy(e,dmg,kx,ky){
+  e.hp-=dmg; e.hurt=0.12; Audio_.sfxHit();
+  spawnParticles(e.x,e.y-4,'#c0392b',4);
+  const k=Math.hypot(kx,ky)||1; e.x+=kx/k*3; e.y+=ky/k*3;
+  game.floaters.push({x:e.x,y:e.y-12,txt:'-'+Math.round(dmg),col:'#ffd27a',life:0.7});
+  if(e.hp<=0){ e.alive=false; e.death=0.6; game.kills++;
+    spawnParticles(e.x,e.y-4,'#7a2a20',8);
+    // drop
+    if(Math.random()<0.65){
+      const drops=game.level.drops || ['it_ammo','it_ammo','it_veg'];
+      const k2=drops[Math.floor(Math.random()*drops.length)];
+      game.items.push(makeItem(k2,e.x,e.y));
+    }
+  }
+}
+function hurtPlayer(dmg){
+  const p=game.player; if(p.invuln>0)return;
+  p.hp-=dmg; p.invuln=0.6; game.hurtFlash=1; Audio_.sfxHurt();
+  shake(0.18,3); spawnParticles(p.x,p.y-4,'#c0392b',5);
+}
+function pickup(it){
+  it.picked=true; const def=ITEMDEF[it.key]; const p=game.player;
+  if(!def){return;}
+  let parts=[];
+  if(it.hidden){
+    game.gotHidden=true; Audio_.sfxAchieve();
+    showBanner('成就 · '+it.achieve, '寻获 '+(it.hiddenName||def.name));
+    if(def.surv)p.surv=Math.min(p.maxsurv,p.surv+def.surv);
+    if(def.hp)p.hp=Math.min(p.maxhp,p.hp+def.hp);
+    spawnParticles(it.x,it.y,'#e0b04a',14);
+    return;
+  }
+  Audio_.sfxPickup();
+  if(def.ammo){ p.ammo=Math.min(p.maxammo,p.ammo+def.ammo); if(p.reload>0&&p.ammo>0)p.reload=0; parts.push('+'+def.ammo+'发'); }
+  if(def.surv){ p.surv=Math.min(p.maxsurv,p.surv+def.surv); parts.push((game.level.survival.name)+'+'+def.surv); }
+  if(def.hp){ p.hp=Math.min(p.maxhp,p.hp+def.hp); parts.push('体力+'+def.hp); }
+  if(def.warm){ p.warmBuff=def.warm; parts.push('御寒'); }
+  if(def.cane && !p.hasCane){ p.hasCane=true; p.speed=p.baseSpeed*1.15; p.baseSpeed=p.speed; parts.push('移速+15%'); }
+  if(def.survSaveSec){ p.waterBuff=def.survSaveSec; parts.push('消耗-30%'); }
+  if(def.survSlow){ p.survSlowBuff=true; parts.push('消耗减半'); }
+  if(def.fuel){ // light nearest unlit/refuel fire OR grant temp warmth
+    p.warmBuff=Math.max(p.warmBuff,5); parts.push('取暖'); Audio_.sfxFire();
+  }
+  if(def.story){ showBanner('煮皮带充饥', '红军战士的坚韧'); }
+  spawnParticles(it.x,it.y,'#cfe89a',5);
+  toast(parts.join(' · ')||'拾取', def.name);
+  game.floaters.push({x:it.x,y:it.y-10,txt:def.surv?('+'+def.surv):(def.hp?('+'+def.hp):(def.ammo?('+'+def.ammo):'')),col:'#bfe089',life:0.8});
+}
+function spawnParticles(x,y,col,n){
+  for(let i=0;i<n;i++){const a=rand(0,6.28),s=rand(10,40);
+    game.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-10,g:60,life:rand(0.3,0.7),col,sz:rand(1,2)});}
+}
+function spawnFireParticle(f){
+  game.particles.push({x:f.x+rand(-3,3),y:f.y-2,vx:rand(-6,6),vy:rand(-30,-16),g:-10,life:rand(0.3,0.6),col:Math.random()<0.5?'#ffb13a':'#ff7a2a',sz:rand(1,2)});
+}
+function shake(t,m){ game.shakeT=Math.max(game.shakeT,t); game.shakeMag=m; }
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+function render(){
+  // shake offset
+  let sx=0,sy=0;
+  if(game.shakeT>0){ sx=(Math.random()-0.5)*game.shakeMag*2; sy=(Math.random()-0.5)*game.shakeMag*2; }
+  const camx=Math.floor(game.cam.x+sx), camy=Math.floor(game.cam.y+sy);
+
+  ctx.clearRect(0,0,VIEW_W,VIEW_H);
+  ctx.fillStyle='#05060a'; ctx.fillRect(0,0,VIEW_W,VIEW_H);
+
+  // ----- world tiles -----
+  const x0=Math.floor(camx/TILE), y0=Math.floor(camy/TILE);
+  const x1=x0+Math.ceil(VIEW_W/TILE)+1, y1=y0+Math.ceil(VIEW_H/TILE)+1;
+  const waterFrame=Math.floor(game.time*4)%4;
+  for(let ty=y0;ty<y1;ty++){
+    if(ty<0||ty>=MAP_H)continue;
+    for(let tx=x0;tx<x1;tx++){
+      if(tx<0||tx>=MAP_W)continue;
+      if(!game.explored[ty*MAP_W+tx])continue; // fog handles unexplored (skip draw)
+      const id=game.tiles[ty*MAP_W+tx];
+      const names=['G','S','H','W','P','R'];
+      const tv=game.tileVar[names[id]] || game.tileVar['G'];
+      const dx=tx*TILE-camx, dy=ty*TILE-camy;
+      if(tv.frames){ ctx.drawImage(tv.frames[waterFrame],dx,dy); }
+      else { const vi=Math.floor(hash2(tx,ty)*tv.variants.length); ctx.drawImage(tv.variants[vi],dx,dy); }
+    }
+  }
+
+  // ----- props (behind/with entities, sorted by y) -----
+  const renderList=[];
+  for(const pr of game.props){
+    if(pr.x<camx-20||pr.x>camx+VIEW_W+20||pr.y<camy-20||pr.y>camy+VIEW_H+20)continue;
+    const ttx=Math.floor(pr.x/TILE),tty=Math.floor(pr.y/TILE);
+    if(ttx<0||tty<0||ttx>=MAP_W||tty>=MAP_H||!game.explored[tty*MAP_W+ttx])continue;
+    renderList.push({y:pr.y,kind:'prop',o:pr});
+  }
+  // fires
+  for(const f of game.fires){
+    if(f.x<camx-20||f.x>camx+VIEW_W+20||f.y<camy-20||f.y>camy+VIEW_H+20)continue;
+    renderList.push({y:f.y,kind:'fire',o:f});
+  }
+  // waypoint flags
+  for(let i=0;i<game.wps.length;i++){const w=game.wps[i];
+    const wx=w.tx*TILE+8,wy=w.ty*TILE+8;
+    if(wx<camx-20||wx>camx+VIEW_W+20)continue;
+    renderList.push({y:wy,kind:'flag',o:{x:wx,y:wy,last:i===game.wps.length-1,reached:w.reached}});
+  }
+  // items
+  for(const it of game.items){ if(it.picked)continue;
+    if(it.x<camx-20||it.x>camx+VIEW_W+20||it.y<camy-20||it.y>camy+VIEW_H+20)continue;
+    const ttx=Math.floor(it.x/TILE),tty=Math.floor(it.y/TILE);
+    if(!game.explored[tty*MAP_W+ttx])continue;
+    if(it.hidden){ /* only show subtle if explored */ }
+    renderList.push({y:it.y,kind:'item',o:it});
+  }
+  // enemies
+  for(const e of game.enemies){
+    if(!e.alive && e.death<=0)continue;
+    if(e.x<camx-20||e.x>camx+VIEW_W+20)continue;
+    renderList.push({y:e.y,kind:'enemy',o:e});
+  }
+  // player
+  renderList.push({y:game.player.y,kind:'player',o:game.player});
+
+  renderList.sort((a,b)=>a.y-b.y);
+  for(const r of renderList){
+    const o=r.o;
+    if(r.kind==='prop') drawProp(o,camx,camy);
+    else if(r.kind==='fire') drawFire(o,camx,camy);
+    else if(r.kind==='flag') drawFlag(o,camx,camy);
+    else if(r.kind==='item') drawItem(o,camx,camy);
+    else if(r.kind==='enemy') drawCharacter(ENEMY_SHEET,o,camx,camy,false);
+    else if(r.kind==='player') drawCharacter(SOLDIER_SHEET,o,camx,camy,true);
+  }
+
+  // bullets
+  for(const b of game.bullets){
+    const bx=b.x-camx, by=b.y-camy;
+    ctx.fillStyle=b.fromP?'#ffe49a':'#ff8a5a';
+    ctx.fillRect(Math.floor(bx)-1,Math.floor(by)-1,3,2);
+    ctx.fillStyle='rgba(255,200,120,.4)';
+    ctx.fillRect(Math.floor(bx-b.vx*0.01)-1,Math.floor(by-b.vy*0.01),2,1);
+  }
+  // particles
+  for(const pa of game.particles){
+    ctx.globalAlpha=clamp(pa.life*2,0,1); ctx.fillStyle=pa.col;
+    ctx.fillRect(Math.floor(pa.x-camx),Math.floor(pa.y-camy),pa.sz,pa.sz);
+  }
+  ctx.globalAlpha=1;
+
+  // ----- LIGHTING PASS -----
+  const L=game.level;
+  lctx.clearRect(0,0,VIEW_W,VIEW_H);
+  // ambient darkness (stronger in storm)
+  let aAlpha=L.ambientAlpha + (game.weather.gust? 0.16:0) + (game.weather.ash?0.12:0);
+  lctx.fillStyle=L.lightTint; lctx.globalAlpha=Math.min(0.7,aAlpha); lctx.fillRect(0,0,VIEW_W,VIEW_H);
+  lctx.globalAlpha=1;
+  lctx.globalCompositeOperation='destination-out';
+  // player vision light (soft radial)
+  const pr=L.viewRadius*TILE;
+  radialHole(lctx, game.player.x-camx, game.player.y-camy, pr*0.55, pr);
+  // fires
+  for(const f of game.fires){ if(!f.lit)continue;
+    const fx=f.x-camx, fy=f.y-camy;
+    if(fx<-60||fx>VIEW_W+60)continue;
+    radialHole(lctx, fx, fy, f.r*0.3*(f.flick||1), f.r*(f.flick||1));
+  }
+  lctx.globalCompositeOperation='source-over';
+  ctx.drawImage(lightCv,0,0);
+
+  // fire additive glow
+  ctx.globalCompositeOperation='lighter';
+  for(const f of game.fires){ if(!f.lit)continue; const fx=f.x-camx,fy=f.y-camy; if(fx<-40||fx>VIEW_W+40)continue;
+    const g=ctx.createRadialGradient(fx,fy-2,2,fx,fy-2,18*(f.flick||1));
+    g.addColorStop(0,'rgba(255,170,70,.5)'); g.addColorStop(1,'rgba(255,120,40,0)');
+    ctx.fillStyle=g; ctx.fillRect(fx-20,fy-22,40,40);
+  }
+  ctx.globalCompositeOperation='source-over';
+
+  // ----- WEATHER overlay -----
+  const w=game.weather;
+  if(w.fog){
+    // drifting fog banks (soft radial puffs) + base haze
+    ctx.fillStyle='rgba(150,160,170,.10)'; ctx.fillRect(0,0,VIEW_W,VIEW_H);
+    for(const p of w.puffs){ const g=ctx.createRadialGradient(p.x,p.y,2,p.x,p.y,p.r);
+      g.addColorStop(0,'rgba(180,188,196,'+p.a+')'); g.addColorStop(1,'rgba(180,188,196,0)');
+      ctx.fillStyle=g; ctx.fillRect(p.x-p.r,p.y-p.r,p.r*2,p.r*2); }
+  }
+  if(w.rain||w.snow||w.ash||w.petal){
+    ctx.save();
+    if(w.snow){ ctx.fillStyle='rgba(230,238,248,.85)'; for(const d of w.drops){ ctx.fillRect(Math.floor(d.x),Math.floor(d.y),1,1);} }
+    else if(w.ash){ for(const d of w.drops){ ctx.fillStyle = (d.sz>1?'rgba(60,56,52,.7)':'rgba(150,144,138,.55)'); ctx.fillRect(Math.floor(d.x),Math.floor(d.y),d.sz,d.sz);} }
+    else if(w.petal){ for(const d of w.drops){ ctx.fillStyle = (d.sz>1?'rgba(224,72,58,.9)':'rgba(224,176,74,.9)'); ctx.fillRect(Math.floor(d.x),Math.floor(d.y),d.sz,d.sz);} }
+    else { ctx.strokeStyle='rgba(150,170,200,.32)'; ctx.lineWidth=1; ctx.beginPath();
+      for(const d of w.drops){ ctx.moveTo(d.x,d.y); ctx.lineTo(d.x-2,d.y+6); } ctx.stroke(); }
+    ctx.restore();
+    // frost vignette in blizzard
+    if(w.snow && w.gust){ const g=ctx.createRadialGradient(VIEW_W/2,VIEW_H/2,VIEW_H*0.3,VIEW_W/2,VIEW_H/2,VIEW_H*0.75);
+      g.addColorStop(0,'rgba(200,225,245,0)'); g.addColorStop(1,'rgba(200,225,245,.28)'); ctx.fillStyle=g; ctx.fillRect(0,0,VIEW_W,VIEW_H);}
+    // lightning flash (rain)
+    if(w.rain && w.flash>0){ ctx.fillStyle='rgba(220,230,255,'+(w.flash*0.5)+')'; ctx.fillRect(0,0,VIEW_W,VIEW_H);}
+    // distant gunfire glow (ash/night battle) — warm flicker from screen edges
+    if(w.ash && w.flash>0){ const g=ctx.createRadialGradient(VIEW_W/2,VIEW_H,VIEW_H*0.2,VIEW_W/2,VIEW_H,VIEW_H*1.1);
+      g.addColorStop(0,'rgba(255,140,50,'+(w.flash*0.22)+')'); g.addColorStop(1,'rgba(255,90,30,0)'); ctx.fillStyle=g; ctx.fillRect(0,0,VIEW_W,VIEW_H);}
+  }
+  // celebratory fireworks (clear / victory level)
+  if(w.clear && w.flash>0){
+    const fx=VIEW_W*(0.3+0.4*((Math.floor(game.time*0.7)%3)/2)), fy=VIEW_H*0.3;
+    ctx.save(); ctx.globalCompositeOperation='lighter';
+    for(let i=0;i<12;i++){ const a=i/12*6.28, r=18*(1-w.flash); const col=i%2?'#e0b04a':'#e0483a';
+      ctx.fillStyle=col; ctx.globalAlpha=w.flash; ctx.fillRect(fx+Math.cos(a)*r, fy+Math.sin(a)*r, 2,2); }
+    ctx.restore();
+  }
+
+  // ----- vignette (low survival / health) -----
+  const vig=Math.max(game.lowVig, 1-clamp(game.player.hp/40,0,1));
+  if(vig>0.02){ const g=ctx.createRadialGradient(VIEW_W/2,VIEW_H/2,VIEW_H*0.25,VIEW_W/2,VIEW_H/2,VIEW_H*0.7);
+    g.addColorStop(0,'rgba(80,0,0,0)'); g.addColorStop(1,'rgba(90,0,0,'+(vig*0.5)+')'); ctx.fillStyle=g; ctx.fillRect(0,0,VIEW_W,VIEW_H);}
+  // hurt flash
+  if(game.hurtFlash>0){ ctx.fillStyle='rgba(180,30,20,'+(game.hurtFlash*0.35)+')'; ctx.fillRect(0,0,VIEW_W,VIEW_H);}
+
+  // subtle scanlines
+  ctx.globalAlpha=0.06; ctx.fillStyle='#000';
+  for(let yy=0;yy<VIEW_H;yy+=3) ctx.fillRect(0,yy,VIEW_W,1);
+  ctx.globalAlpha=1;
+
+  // ----- HUD (pixel widgets on canvas) -----
+  drawHUD();
+}
+
+function radialHole(c,x,y,r0,r1){
+  const g=c.createRadialGradient(x,y,Math.max(0,r0),x,y,r1);
+  g.addColorStop(0,'rgba(0,0,0,1)'); g.addColorStop(0.7,'rgba(0,0,0,.85)'); g.addColorStop(1,'rgba(0,0,0,0)');
+  c.fillStyle=g; c.fillRect(x-r1,y-r1,r1*2,r1*2);
+}
+
+function drawCharacter(sheet,o,camx,camy,isPlayer){
+  const x=Math.floor(o.x-camx-SOLD_W/2), y=Math.floor(o.y-camy-SOLD_H+3);
+  // shadow
+  ctx.fillStyle='rgba(0,0,0,.28)'; ctx.beginPath();
+  ctx.ellipse(o.x-camx, o.y-camy+1, 6,2.4,0,0,6.28); ctx.fill();
+  if(!o.alive && o.death!==undefined){ // death fade
+    ctx.globalAlpha=clamp(o.death*1.6,0,1);
+  }
+  // hurt flash white
+  const flashing = (isPlayer && o.invuln>0 && Math.floor(game.time*20)%2===0) || (!isPlayer && o.hurt>0);
+  const sxF=o.frame*SOLD_W, syF=o.dir*SOLD_H;
+  if(flashing){
+    // composite sprite + tint on offscreen buffer so the tint is clipped to sprite pixels only
+    tintCtx.clearRect(0,0,SOLD_W,SOLD_H);
+    tintCtx.globalCompositeOperation='source-over';
+    tintCtx.drawImage(sheet, sxF,syF,SOLD_W,SOLD_H, 0,0, SOLD_W,SOLD_H);
+    tintCtx.globalCompositeOperation='source-atop';
+    tintCtx.fillStyle = isPlayer ? 'rgba(255,255,255,.78)' : 'rgba(255,90,70,.78)';
+    tintCtx.fillRect(0,0,SOLD_W,SOLD_H);
+    tintCtx.globalCompositeOperation='source-over';
+    ctx.drawImage(tintCv, x,y);
+  } else {
+    ctx.drawImage(sheet, sxF,syF,SOLD_W,SOLD_H, x,y, SOLD_W,SOLD_H);
+  }
+  ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+  // enemy alert mark
+  if(!isPlayer && o.alive && o.state==='alert'){
+    ctx.fillStyle='#e0483a'; drawText(ctx,'!',x+7,y-6,1,'#e0483a');
+    ctx.fillStyle='#e0483a'; ctx.fillRect(x+7,y-7,1,4); ctx.fillRect(x+7,y-2,1,1);
+  }
+  // tiny hp bar for hurt enemies
+  if(!isPlayer && o.alive && o.hp<o.maxhp){
+    ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(x+2,y-4,12,2);
+    ctx.fillStyle='#c0392b'; ctx.fillRect(x+2,y-4,Math.round(12*o.hp/o.maxhp),2);
+  }
+}
+
+function drawProp(pr,camx,camy){
+  const x=Math.floor(pr.x-camx), y=Math.floor(pr.y-camy);
+  const sway=Math.sin(game.time*2+pr.ph)*1.2;
+  const P=(dx,dy,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x+dx,y+dy,w,h);};
+  switch(pr.type){
+    case 'tuft':
+      ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(x-3,y,6,1);
+      for(let i=0;i<5;i++){const bx=-3+i*1.4+sway*(i/5);P(Math.round(bx),-5-(i%2),1,5,'#5e7a3e');P(Math.round(bx),-6-(i%2),1,1,'#74963f');}
+      break;
+    case 'reed':
+      P(Math.round(sway),-9,1,9,'#7a8a4a');P(Math.round(sway),-10,1,1,'#caa83a');P(Math.round(sway*0.6)+2,-7,1,7,'#6e7e42');
+      break;
+    case 'rock':
+      ctx.fillStyle='rgba(0,0,0,.22)';ctx.fillRect(x-4,y-1,9,2);
+      P(-4,-5,9,6,'#5a5347');P(-4,-5,9,1,'#6b6353');P(-4,0,9,1,'#403a30');P(1,-3,3,2,'#6e6656');
+      break;
+    case 'snowrock':
+      ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(x-4,y-1,9,2);
+      P(-4,-5,9,6,'#4a505a');P(-4,-5,9,2,'#cdd9e6');P(-4,1,9,1,'#363b43');
+      break;
+    case 'pine':
+      ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(x-1,y,3,1);
+      P(0,-3,2,3,'#4a3a26');P(-3+Math.round(sway*0.4),-7,8,3,'#3a5a3a');P(-2+Math.round(sway*0.4),-10,6,3,'#436b43');P(-1+Math.round(sway*0.4),-13,4,3,'#4f7a4f');P(0,-15,2,2,'#dde8ee');
+      break;
+    case 'drift':
+      P(-5,-3,11,3,'#dde6f0');P(-5,-3,11,1,'#f2f7fc');P(-3,-5,7,2,'#eaf1f8');
+      break;
+    case 'boulder': // big grey rock (cliffs)
+      ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(x-6,y-1,14,3);
+      P(-6,-9,14,10,'#565d68');P(-6,-9,14,2,'#69707b');P(-6,0,14,1,'#3a3f47');P(-3,-6,5,3,'#6c7480');P(2,-3,4,3,'#454a53');
+      break;
+    case 'debris': // shell crater / rubble (battle)
+      ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(x-5,y-1,11,2);
+      P(-5,-2,11,3,'#3a342c');P(-4,-3,3,2,'#4a4238');P(2,-3,3,2,'#2e2820');P(0,-1,2,1,'#5a4a30');
+      break;
+    case 'crate': // supply / ammo box
+      ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(x-4,y,9,1);
+      P(-4,-7,8,7,'#6b4a2a');P(-4,-7,8,1,'#855e36');P(-4,-1,8,1,'#4a3320');P(-4,-4,8,1,'#3a2a18');P(-1,-7,1,7,'#4a3320');
+      P(1,-5,2,2,'#caa05a');
+      break;
+    case 'torch': // burning post (night siege)
+      ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(x-1,y,3,1);
+      P(0,-9,2,9,'#4a3826');
+      const tf=Math.sin(game.time*16+pr.ph)*1;
+      P(-1,-13+Math.round(tf),3,4,'#ff7a2a');P(0,-15+Math.round(tf),1,3,'#ffd27a');
+      break;
+    case 'cattail': // riverside reed (water levels)
+      P(Math.round(sway),-11,1,11,'#5e6e3a');P(Math.round(sway)-1,-12,3,3,'#6a4a28');P(Math.round(sway)+1,-7,1,5,'#52602f');
+      break;
+    case 'sand': // dry grass tuft (chishui)
+      ctx.fillStyle='rgba(0,0,0,.12)';ctx.fillRect(x-3,y,6,1);
+      for(let i=0;i<5;i++){const bx=-3+i*1.4+sway*(i/5);P(Math.round(bx),-4-(i%2),1,4,'#9a8a4a');P(Math.round(bx),-5-(i%2),1,1,'#b5a85a');}
+      break;
+    case 'bamboo': // pine→bamboo for southern levels
+      ctx.fillStyle='rgba(0,0,0,.18)';ctx.fillRect(x-1,y,3,1);
+      P(Math.round(sway*0.5),-16,2,16,'#4a6b3a');P(Math.round(sway*0.5),-12,2,1,'#3a5530');P(Math.round(sway*0.5),-7,2,1,'#3a5530');P(Math.round(sway*0.5)+2,-14,3,1,'#5a7e4a');P(Math.round(sway*0.5)-3,-9,3,1,'#5a7e4a');
+      break;
+    case 'banner': // small celebratory red flag
+      ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(x-1,y,3,1);
+      P(0,-15,1,15,'#7a5a32');
+      const bw=Math.sin(game.time*5+pr.ph);
+      P(1,-15,6+Math.round(bw),4,'#c0392b');P(1,-15,6+Math.round(bw),1,'#e0483a');P(3,-13,1,1,'#e0b04a');
+      break;
+  }
+}
+
+function drawFire(f,camx,camy){
+  const x=Math.floor(f.x-camx),y=Math.floor(f.y-camy);
+  const P=(dx,dy,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x+dx,y+dy,w,h);};
+  // logs
+  P(-5,-1,10,3,'#3a2616');P(-5,-1,10,1,'#52371f');P(-4,1,8,1,'#241710');
+  // flame (animated)
+  const fl=Math.sin(game.time*14+f.x)*1;
+  P(-2,-6+Math.round(fl),4,5,'#ff7a2a');P(-1,-9+Math.round(fl),2,4,'#ffb13a');P(0,-11+Math.round(fl),1,2,'#ffe07a');
+  P(-3,-4,1,2,'#ff5a1a');P(2,-4,1,2,'#ff5a1a');
+}
+
+function drawFlag(o,camx,camy){
+  const x=Math.floor(o.x-camx),y=Math.floor(o.y-camy);
+  const P=(dx,dy,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x+dx,y+dy,w,h);};
+  ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(x-1,y,3,1);
+  // pole
+  P(0,-22,1,22,'#7a5a32');
+  // banner wave
+  const wv=Math.sin(game.time*4+o.x*0.1);
+  const col=o.reached?'#c0392b':'#8a3026';
+  for(let i=0;i<8;i++){ const yy=-21+Math.floor(i*1.0); const off=Math.round(Math.sin(game.time*4+i*0.5)*1.2);
+    P(1+off,yy,8-Math.floor(i*0.2),1,col);
+  }
+  P(2,-20,2,2,'#e0b04a'); // gold star on flag
+  if(o.last){ // summit marker bigger gold glow
+    ctx.globalCompositeOperation='lighter';
+    const g=ctx.createRadialGradient(x,y-16,2,x,y-16,16); g.addColorStop(0,'rgba(224,176,74,.4)');g.addColorStop(1,'rgba(224,176,74,0)');
+    ctx.fillStyle=g;ctx.fillRect(x-16,y-32,32,32); ctx.globalCompositeOperation='source-over';
+  }
+  // base ring
+  P(-2,-1,5,1,o.reached?'#caa83a':'#5a5040');
+}
+
+function drawItem(it,camx,camy){
+  const img=sprites[it.key]; if(!img)return;
+  const bob=Math.round(Math.sin(it.bob)*1.5);
+  const x=Math.floor(it.x-camx-7), y=Math.floor(it.y-camy-7+bob);
+  // shadow
+  ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(it.x-camx,it.y-camy+3,5,1.8,0,0,6.28);ctx.fill();
+  // subtle glow for special
+  if(it.hidden||it.key==='it_barley'){ ctx.globalCompositeOperation='lighter';
+    const g=ctx.createRadialGradient(it.x-camx,it.y-camy,1,it.x-camx,it.y-camy,12);g.addColorStop(0,'rgba(224,176,74,.35)');g.addColorStop(1,'rgba(224,176,74,0)');
+    ctx.fillStyle=g;ctx.fillRect(it.x-camx-12,it.y-camy-12,24,24);ctx.globalCompositeOperation='source-over';}
+  ctx.drawImage(img,x,y);
+}
+
+/* ---------- HUD widgets ---------- */
+function drawHUD(){
+  const p=game.player, L=game.level;
+  const M=8; // margin
+  // hearts (5 hearts = 100hp)
+  const hearts=5, per=p.maxhp/hearts;
+  for(let i=0;i<hearts;i++){
+    const hx=M+i*15, hy=M;
+    const fill=clamp((p.hp-i*per)/per,0,1);
+    drawHeart(hx,hy, fill);
+  }
+  // survival bar with icon
+  const barX=M, barY=M+15, barW=92, barH=7;
+  // icon
+  drawSurvIcon(L.survival.icon, barX, barY-1);
+  const bx=barX+12;
+  ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(bx-1,barY-1,barW+2,barH+2);
+  ctx.fillStyle='#1a1d14'; ctx.fillRect(bx,barY,barW,barH);
+  const ratio=p.surv/p.maxsurv;
+  ctx.fillStyle = p.surv<=L.survival.low? L.survival.barLow : L.survival.barColor;
+  ctx.fillRect(bx,barY,Math.round(barW*ratio),barH);
+  // segment ticks
+  ctx.fillStyle='rgba(0,0,0,.35)'; for(let s=1;s<5;s++)ctx.fillRect(bx+Math.round(barW*s/5),barY,1,barH);
+  // label number
+  drawText(ctx, ''+Math.round(p.surv), bx+barW+4, barY+1, 1, '#d9cda8');
+
+  // ammo bottom-left
+  const ay=VIEW_H-14;
+  ctx.drawImage(sprites['it_ammo'], M-2, ay-3);
+  drawText(ctx, p.reload>0?'--':(''+p.ammo), M+12, ay, 2, p.ammo===0?'#c0392b':'#e0d6b0');
+  if(p.reload>0){ // reload bar
+    ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(M+12,ay+11,30,2);
+    ctx.fillStyle='#e0b04a';ctx.fillRect(M+12,ay+11,Math.round(30*(1-p.reload)),2);
+  }
+
+  // ---- minimap top-right ----
+  const mmW=58, mmH=58, mmX=VIEW_W-mmW-M, mmY=M;
+  ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(mmX-2,mmY-2,mmW+4,mmH+4);
+  ctx.fillStyle='#0c0f0a'; ctx.fillRect(mmX,mmY,mmW,mmH);
+  const sxr=mmW/MAP_W, syr=mmH/MAP_H;
+  for(let ty=0;ty<MAP_H;ty++)for(let tx=0;tx<MAP_W;tx++){
+    if(!game.explored[ty*MAP_W+tx])continue;
+    const id=game.tiles[ty*MAP_W+tx];
+    let c;
+    if(id===3)c='#1a2c33'; else if(id===1)c='#2e2a1e'; else if(id===2)c=game.levelIdx===0?'#465a2a':'#7a96b0';
+    else if(id===5)c='#3a3f47'; else if(id===4)c='#4a3d2a'; else c=game.levelIdx===0?'#3c4a2c':'#9aa6b6';
+    ctx.fillStyle=c; ctx.fillRect(mmX+tx*sxr,mmY+ty*syr,Math.ceil(sxr),Math.ceil(syr));
+  }
+  // waypoints on minimap
+  for(let i=0;i<game.wps.length;i++){const wp=game.wps[i];
+    ctx.fillStyle= wp.reached?'#5a5040' : (i===game.objIndex?'#e0b04a':'#a8853a');
+    const mx=mmX+wp.tx*sxr, my=mmY+wp.ty*syr;
+    ctx.fillRect(mx-1,my-1,3,3);
+    if(i===game.objIndex && Math.floor(game.time*3)%2===0){ctx.fillStyle='#fff';ctx.fillRect(mx,my,1,1);}
+  }
+  // player on minimap
+  ctx.fillStyle='#e0483a';
+  ctx.fillRect(mmX+(game.player.x/TILE)*sxr-1, mmY+(game.player.y/TILE)*syr-1,2,2);
+  // frame
+  ctx.strokeStyle='rgba(224,176,74,.4)';ctx.lineWidth=1;ctx.strokeRect(mmX-2.5,mmY-2.5,mmW+5,mmH+5);
+
+  // ---- floaters (combat/pickup numbers) ----
+  for(const fl of game.floaters){
+    const fx=fl.x-game.cam.x, fy=fl.y-game.cam.y;
+    ctx.globalAlpha=clamp(fl.life*2,0,1);
+    drawText(ctx, fl.txt, Math.floor(fx)-3, Math.floor(fy), 1, fl.col);
+    ctx.globalAlpha=1;
+  }
+
+  // ---- aim reticle ----
+  if(mouse.active && game.state==='play'){
+    const rx=Math.floor(mouse.x), ry=Math.floor(mouse.y);
+    ctx.strokeStyle='rgba(224,176,74,.7)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.arc(rx,ry,4,0,6.28);ctx.stroke();
+    ctx.fillStyle='rgba(224,176,74,.9)';ctx.fillRect(rx,ry-6,1,3);ctx.fillRect(rx,ry+4,1,3);ctx.fillRect(rx-6,ry,3,1);ctx.fillRect(rx+4,ry,3,1);
+  }
+}
+function drawHeart(x,y,fill){
+  // 9x8 pixel heart, fill 0..1 left-to-right
+  const shape=[
+    "011011 0",
+    "1111111",
+    "1111111",
+    "0111110",
+    "0011100",
+    "0001000"
+  ];
+  // simpler explicit heart
+  const hs=[[1,0],[2,0],[5,0],[6,0],
+            [0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[7,1],
+            [0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2],[7,2],
+            [1,3],[2,3],[3,3],[4,3],[5,3],[6,3],
+            [2,4],[3,4],[4,4],[5,4],
+            [3,5],[4,5]];
+  for(const [dx,dy] of hs){
+    const filled = dx/7 <= fill+0.001;
+    ctx.fillStyle = filled? '#d83a2c' : 'rgba(60,20,16,.7)';
+    ctx.fillRect(x+dx,y+dy,1,1);
+  }
+  // highlight
+  if(fill>0.2){ctx.fillStyle='#f06a5a';ctx.fillRect(x+1,y+1,1,1);ctx.fillRect(x+2,y+1,1,1);}
+}
+function drawSurvIcon(kind,x,y){
+  const P=(dx,dy,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(x+dx,y+dy,w,h);};
+  if(kind==='stomach'){ P(1,1,7,7,'#caa05a');P(1,1,7,1,'#e0bc78');P(2,2,2,2,'#8a6a34');P(2,0,2,1,'#caa05a'); }
+  else if(kind==='morale'){ // raised fist / banner
+    P(2,0,5,2,'#c0392b');P(2,0,5,1,'#e0483a');P(3,2,3,3,'#caa05a');P(4,5,1,3,'#7a5a32'); }
+  else if(kind==='water'){ // droplet
+    P(3,0,2,2,'#5aa0d4');P(2,2,4,3,'#5aa0d4');P(1,4,6,3,'#3f86c0');P(1,4,6,1,'#74b6e4');P(2,6,4,1,'#2f6aa0'); }
+  else if(kind==='stamina'){ // boot
+    P(1,0,3,6,'#6b4a2a');P(1,5,6,2,'#4a3320');P(1,5,6,1,'#7a5535');P(4,2,1,3,'#8a6a3a'); }
+  else { // temperature
+    P(3,0,3,6,'#cdd6e0');P(2,5,5,4,'#cdd6e0');P(3,6,3,2,'#c0392b');P(4,1,1,4,'#c0392b');
+  }
+}
+
+/* =====================================================================
+   MAIN LOOP
+   ===================================================================== */
+let lastT=performance.now();
+function frame(now){
+  let dt=(now-lastT)/1000; lastT=now;
+  dt=Math.min(dt,0.05); // clamp
+  if(game.state==='play'){ update(dt); render(); }
+  else if(game.state==='pause'){ render(); } // freeze frame visible
+  requestAnimationFrame(frame);
+}
+
+/* =====================================================================
+   MENU WIRING
+   ===================================================================== */
+function buildMenu(){
+  const list=document.getElementById('levelList');
+  list.innerHTML='';
+  LEVELS.forEach((L,i)=>{
+    const d=document.createElement('div');
+    d.className='lv '+(L.play?'play':'lock');
+    d.innerHTML=`<div class="no">${L.no}</div><div class="nm">${L.name}</div><div class="ds">${L.desc}</div>`+
+      (L.play? `<span class="tag">可玩</span>`:`<span class="badge">规划中</span>`);
+    if(L.play){ d.addEventListener('click',()=>{ selectLevel(i,d); }); }
+    list.appendChild(d);
+  });
+}
+let selectedIdx=0;
+function selectLevel(i,el){
+  selectedIdx=i;
+  document.querySelectorAll('.lv').forEach(x=>x.style.boxShadow='');
+  if(el) el.style.boxShadow='0 0 0 2px var(--gold), 0 8px 22px rgba(0,0,0,.5)';
+  document.getElementById('startBtn').textContent='进 入 · '+LEVELS[i].name;
+}
+
+document.getElementById('startBtn').addEventListener('click',()=>{ Audio_.init();Audio_.resume(); startLevel(selectedIdx); });
+document.getElementById('resumeBtn').addEventListener('click',togglePause);
+document.getElementById('quitBtn').addEventListener('click',backToMenu);
+document.getElementById('retryBtn').addEventListener('click',()=>startLevel(game.levelIdx));
+document.getElementById('loseMenuBtn').addEventListener('click',backToMenu);
+document.getElementById('winMenuBtn').addEventListener('click',backToMenu);
+document.getElementById('nextBtn').addEventListener('click',()=>{ if(LEVELS[game.levelIdx+1]&&LEVELS[game.levelIdx+1].play) startLevel(game.levelIdx+1); });
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+function init(){
+  SOLDIER_SHEET=buildSoldier(RED_PAL);
+  ENEMY_SHEET=buildSoldier(ENEMY_PAL);
+  buildItemSprites();
+  buildMenu();
+  selectLevel(0,document.querySelector('.lv.play'));
+  document.getElementById('loadnote').style.display='none';
+  requestAnimationFrame(frame);
+}
+init();
+</script>
+</body>
+</html>
