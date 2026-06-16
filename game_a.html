@@ -185,6 +185,202 @@
     font-size:11px;letter-spacing:.1em;opacity:.6}
   @media (max-width:560px){ .levels{max-width:340px} .lv{width:calc(50% - 6px)} }
 
+  /* ===== 物品初次拾取弹窗 ===== */
+  #pickupPopupOverlay{
+    position:absolute;inset:0;z-index:60;
+    background:rgba(40,14,6,.68);backdrop-filter:blur(2px);
+    display:flex;align-items:center;justify-content:center;
+    pointer-events:auto;cursor:pointer;
+  }
+  #pickupPopupOverlay.hidden{display:none}
+  #pickupBox{
+    position:relative;cursor:default;
+    width:clamp(270px,52vw,420px);
+    background:linear-gradient(160deg,#c8aa6a 0%,#b89050 45%,#a07a2c 100%);
+    border:2px solid #8a6620;border-radius:5px;
+    box-shadow:0 0 0 1px #d4a84a,0 14px 44px rgba(0,0,0,.75);
+    padding:14px 16px 12px;overflow:hidden;
+    animation:packDrop .46s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes packDrop{
+    0%{transform:translateY(-80px) scale(.82);opacity:0}
+    100%{transform:translateY(0) scale(1);opacity:1}
+  }
+  #pickupBox.closing{animation:packUp .28s ease-in forwards}
+  @keyframes packUp{
+    0%{transform:translateY(0) scale(1);opacity:1}
+    100%{transform:translateY(-60px) scale(.82);opacity:0}
+  }
+  /* 麻绳装饰 */
+  #pickupBox::before{
+    content:"";position:absolute;left:-6px;right:-6px;top:42%;height:3px;
+    background:repeating-linear-gradient(90deg,#7a5a18 0,#7a5a18 4px,#9a7a38 4px,#9a7a38 7px);
+    opacity:.65;pointer-events:none;
+  }
+  /* 五角星印章 */
+  .popup-stamp{
+    position:absolute;top:9px;right:11px;width:28px;height:28px;
+    background:#7a1408;opacity:.72;
+    clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+  }
+  .popup-title-row{
+    display:flex;align-items:center;gap:10px;margin-bottom:9px;padding-bottom:8px;
+    border-bottom:1px solid rgba(100,70,14,.4);
+  }
+  #pickupItemCanvas{
+    image-rendering:pixelated;image-rendering:crisp-edges;
+    border:2px solid rgba(100,70,14,.45);border-radius:2px;
+    background:rgba(0,0,0,.22);width:64px;height:64px;flex-shrink:0;
+    display:block;
+  }
+  .popup-item-name{
+    font-family:"Ma Shan Zheng",serif;
+    font-size:clamp(18px,3vw,26px);color:#ddb030;
+    text-shadow:0 2px 0 #5a3808,0 0 14px rgba(220,176,48,.4);line-height:1.1;
+  }
+  .popup-first-badge{
+    display:inline-block;font-size:clamp(8px,1.1vw,10px);
+    background:rgba(120,60,8,.55);border:1px solid rgba(180,120,40,.4);
+    border-radius:2px;padding:.1em .5em;color:#c89030;
+    letter-spacing:.06em;margin-top:.3em;
+  }
+  .popup-desc{
+    font-size:clamp(11px,1.55vw,13px);color:#281408;
+    line-height:1.65;margin-bottom:8px;
+  }
+  .popup-quote{
+    font-family:"Ma Shan Zheng",serif;
+    font-size:clamp(12px,1.75vw,15px);color:#4a2c08;line-height:1.65;
+    border-left:3px solid #8a5614;padding-left:7px;
+    margin-top:5px;margin-bottom:9px;
+  }
+  .popup-quote::before{content:'"'}
+  .popup-quote::after{content:'"'}
+  .popup-hint{
+    text-align:center;font-size:clamp(9px,1.2vw,11px);
+    color:#6a4a18;letter-spacing:.1em;margin-top:3px;opacity:.75;
+  }
+
+  /* ===== 战地手册 ===== */
+  #fieldManualBtn{
+    pointer-events:auto;cursor:pointer;
+    font-family:"Noto Sans SC",sans-serif;font-weight:500;
+    letter-spacing:.14em;font-size:clamp(11px,1.45vw,14px);color:var(--parch);
+    background:transparent;border:1px solid var(--line);
+    padding:.5em 1.4em;border-radius:4px;margin-top:.25em;
+    box-shadow:none;transition:border-color .15s,color .15s;
+  }
+  #fieldManualBtn:hover{border-color:var(--gold-dim);color:var(--gold-dim)}
+
+  #fieldManual{
+    position:absolute;inset:0;z-index:45;
+    background:radial-gradient(120% 90% at 50% 0%,rgba(40,46,32,.55),rgba(7,9,5,.96) 70%);
+    backdrop-filter:blur(3px);
+    display:flex;flex-direction:column;padding:3% 3.5%;overflow:hidden;
+  }
+  #fieldManual.hidden{display:none}
+  .fm-header{
+    display:flex;align-items:center;gap:.8em;flex-wrap:wrap;
+    margin-bottom:.8em;padding-bottom:.65em;border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .fm-title{
+    font-family:"Ma Shan Zheng",serif;
+    font-size:clamp(20px,3.8vw,36px);color:var(--gold);
+    text-shadow:0 2px 0 #000;
+  }
+  .fm-progress-wrap{margin-left:auto;text-align:right;}
+  .fm-progress-label{
+    font-size:clamp(9px,1.25vw,12px);color:var(--muted);
+    margin-bottom:.3em;letter-spacing:.04em;
+  }
+  .fm-progress-bg{
+    width:clamp(100px,18vw,200px);height:5px;
+    background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;
+  }
+  .fm-progress-fill{
+    height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));
+    border-radius:3px;transition:width .5s ease;
+  }
+  .fm-body{
+    display:flex;gap:.8em;flex:1;overflow:hidden;min-height:0;
+  }
+  .fm-list{
+    width:clamp(110px,20%,170px);overflow-y:auto;flex-shrink:0;
+    padding-right:.4em;
+    scrollbar-width:thin;scrollbar-color:var(--line) transparent;
+  }
+  .fm-list-item{
+    cursor:pointer;padding:.35em .5em;border-radius:3px;margin-bottom:1px;
+    font-size:clamp(10px,1.35vw,13px);color:var(--muted);
+    border-left:2px solid transparent;
+    transition:background .1s,color .1s;
+    display:flex;align-items:center;gap:.4em;
+  }
+  .fm-list-item.obtained{color:var(--parch-dim)}
+  .fm-list-item.rare{color:var(--gold-dim)}
+  .fm-list-item.rare.obtained{color:var(--gold)}
+  .fm-list-item.selected{background:rgba(224,176,74,.1);border-left-color:var(--gold-dim)}
+  .fm-list-item .fm-dot{
+    width:5px;height:5px;border-radius:50%;flex-shrink:0;
+    background:var(--line);
+  }
+  .fm-list-item.obtained .fm-dot{background:var(--muted)}
+  .fm-list-item.rare.obtained .fm-dot{background:var(--gold)}
+  .fm-detail{
+    flex:1;overflow-y:auto;padding:.4em .8em;
+    scrollbar-width:thin;scrollbar-color:var(--line) transparent;
+  }
+  .fm-detail-header{
+    display:flex;align-items:flex-start;gap:12px;
+    margin-bottom:.9em;padding-bottom:.75em;border-bottom:1px solid var(--line);
+  }
+  .fm-detail-img-wrap{flex-shrink:0}
+  #fmDetailCanvas{
+    display:block;image-rendering:pixelated;image-rendering:crisp-edges;
+    width:72px;height:72px;
+    border:2px solid var(--line);border-radius:3px;
+    background:rgba(255,255,255,.04);
+  }
+  .fm-detail-img-wrap.rare #fmDetailCanvas{
+    border-color:var(--gold);
+    box-shadow:0 0 10px rgba(224,176,74,.28);
+  }
+  .fm-detail-title{
+    font-family:"Ma Shan Zheng",serif;
+    font-size:clamp(17px,2.8vw,26px);color:var(--gold);
+    text-shadow:0 2px 0 #000;line-height:1;
+  }
+  .fm-detail-meta{
+    font-size:clamp(9px,1.15vw,11px);color:var(--muted);
+    margin-top:.3em;letter-spacing:.05em;
+  }
+  .fm-detail-status{
+    font-size:clamp(10px,1.25vw,12px);margin-top:.4em;letter-spacing:.05em;
+  }
+  .fm-detail-status.found{color:#7ab84a}
+  .fm-detail-status.notfound{color:var(--muted)}
+  .fm-desc{
+    font-size:clamp(11px,1.5vw,14px);color:var(--parch-dim);
+    line-height:1.7;margin-bottom:.7em;
+  }
+  .fm-quote{
+    font-family:"Ma Shan Zheng",serif;
+    font-size:clamp(13px,1.9vw,17px);color:var(--gold-dim);
+    border-left:3px solid var(--line);padding-left:.65em;
+    line-height:1.7;opacity:.85;
+  }
+  .fm-quote::before{content:'"'} .fm-quote::after{content:'"'}
+  .fm-close-btn{
+    pointer-events:auto;cursor:pointer;
+    font-family:"Noto Sans SC",sans-serif;font-weight:500;
+    letter-spacing:.15em;font-size:clamp(11px,1.45vw,14px);
+    color:var(--parch);background:transparent;border:1px solid var(--line);
+    padding:.4em 1.3em;border-radius:4px;margin-top:.7em;
+    transition:border-color .15s;align-self:flex-start;flex-shrink:0;
+  }
+  .fm-close-btn:hover{border-color:var(--gold-dim)}
+
   /* ===== TOUCH CONTROLS (shown only when body.touch) ===== */
   #touchUI{position:absolute;inset:0;z-index:25;pointer-events:none;display:none}
   body.touch.playing #touchUI{display:block}
@@ -305,6 +501,7 @@
     <p class="lead">扮演一名红军战士,穿越长征途中最艰险的关隘。探索迷宫般的大地图,在饥饿与严寒中求生,与围堵之敌周旋——直至会宁会师。</p>
     <div class="levels" id="levelList"></div>
     <button class="btn" id="startBtn">开 始 征 程</button>
+    <button id="fieldManualBtn">📖 战 地 手 册</button>
     <div class="controls kbd">
       <span class="k"><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> 移动</span>
       <span class="k"><span class="key">鼠标</span> 瞄准 · <span class="key">左键</span>/<span class="key">J</span> 射击</span>
@@ -344,6 +541,39 @@
     <p class="ov-sub" id="loseSub">长征路上,每一步都浸着热血。整顿队伍,再度出发。</p>
     <button class="btn" id="retryBtn">重 整 旗 鼓</button>
     <button class="btn ghost" id="loseMenuBtn">返回选关</button>
+  </div>
+
+  <!-- 战地手册 -->
+  <div id="fieldManual" class="hidden">
+    <div class="fm-header">
+      <div class="fm-title">战 地 手 册</div>
+      <div class="fm-progress-wrap">
+        <div class="fm-progress-label" id="fmProgressLabel">已发现 0/0 种物品</div>
+        <div class="fm-progress-bg"><div class="fm-progress-fill" id="fmProgressFill" style="width:0%"></div></div>
+      </div>
+      <button class="fm-close-btn" id="fmCloseBtn">关 闭</button>
+    </div>
+    <div class="fm-body">
+      <div class="fm-list" id="fmItemList"></div>
+      <div class="fm-detail" id="fmDetail"><div class="fm-detail-empty">← 选择物品查看详情</div></div>
+    </div>
+  </div>
+
+  <!-- 首次拾取弹窗 -->
+  <div id="pickupPopupOverlay" class="hidden">
+    <div id="pickupBox">
+      <div class="popup-stamp"></div>
+      <div class="popup-title-row">
+        <canvas id="pickupItemCanvas" width="14" height="14"></canvas>
+        <div>
+          <div class="popup-item-name" id="popupItemName">物品名称</div>
+          <div class="popup-first-badge">首 次 获 得</div>
+        </div>
+      </div>
+      <p class="popup-desc" id="popupItemDesc"></p>
+      <div class="popup-quote" id="popupItemQuote"></div>
+      <div class="popup-hint">点击任意处收下</div>
+    </div>
   </div>
 
   <div class="loadnote" id="loadnote">正在生成战场地形…</div>
@@ -450,45 +680,75 @@ function buildSoldier(pal){
 function drawSoldierFrame(s,ox,oy,d,f,p){
   const P=(x,y,w,h,col)=>{s.fillStyle=col;s.fillRect(ox+x,oy+y,w,h);};
   const legSwing = f===1?1:(f===2?-1:0);
-  // shadow handled separately
+  // shadow line
   // legs
   P(5,15,2,3,p.leg); P(9,15,2,3,p.leg);
-  P(5,17+0,2,1,p.boot); P(9,17,2,1,p.boot);
-  if(legSwing!==0){ // animate one leg forward
+  P(5,17,2,1,p.boot); P(9,17,2,1,p.boot);
+  if(legSwing!==0){
     P(5,15,2,3,p.legShade); P(9,15,2,3,p.leg);
   }
-  // coat body
+  // coat body (深蓝灰色, slightly narrowed for younger frame)
   P(4,8,8,8,p.coatDark);
   P(5,8,6,7,p.coat);
-  // belt
+  // coat highlight on upper chest
+  P(5,8,6,1,p.coatHigh||p.coat);
+  // belt (棕色皮带, with hanging end)
   P(4,12,8,1,p.belt);
-  // arms depend on dir
-  if(d===2){P(3,9,2,5,p.coatDark);} // left
-  else if(d===3){P(11,9,2,5,p.coatDark);} //right
-  else {P(3,9,2,5,p.coatDark);P(11,9,2,5,p.coatDark);}
-  // head
+  P(10,12,1,2,p.belt); // hanging belt end
+  // small pouch on belt (破旧小布包)
+  P(4,13,2,2,p.coatDark);
+  // left arm with patch (左臂补丁)
+  if(d===2){
+    P(3,9,2,5,p.coatDark);
+    P(3,11,2,2,p.patch||'#3a5040');
+    // wrist red cloth (左手腕红布条)
+    P(3,13,2,1,p.wristCloth||p.star);
+  } else if(d===3){
+    P(11,9,2,5,p.coatDark);
+  } else {
+    P(3,9,2,5,p.coatDark);
+    P(11,9,2,5,p.coatDark);
+    // left arm patch visible from front/back
+    P(3,11,2,2,p.patch||'#3a5040');
+    if(d===0){ P(3,13,2,1,p.wristCloth||p.star); } // wrist cloth (front)
+  }
+  // head (圆脸, slightly more prominent)
   P(5,3,6,5,p.skin);
   P(5,3,6,1,p.skinShade);
-  // cap (octagon-ish)
+  // cheek blush (因饥饿晒伤红晕)
+  if(d===0){ P(5,6,1,1,p.skinBlush||p.skin); P(10,6,1,1,p.skinBlush||p.skin); }
+  else if(d===2){ P(5,6,1,1,p.skinBlush||p.skin); }
+  else if(d===3){ P(10,6,1,1,p.skinBlush||p.skin); }
+  // cap (八角帽, 深蓝灰色)
   P(4,1,8,3,p.cap);
   P(4,3,8,1,p.capDark);
   P(5,0,6,1,p.cap);
-  // red star
+  // red star (五角星, slightly askew — 少年自己缝制)
   P(7,1,2,2,p.star);
+  P(8,1,1,1,p.starHigh||p.star); // star highlight
   // face details depending on dir
-  if(d===0){ P(6,5,1,1,'#3a2a1e'); P(9,5,1,1,'#3a2a1e'); } // eyes (down)
-  else if(d===1){ /* back of head: no face, more cap */ P(5,5,6,2,p.skinShade);}
-  else if(d===2){ P(6,5,1,1,'#3a2a1e'); }
-  else { P(9,5,1,1,'#3a2a1e'); }
+  if(d===0){
+    P(6,5,1,1,'#2a1a0e'); P(9,5,1,1,'#2a1a0e'); // 大眼睛
+    P(7,7,1,1,p.skinShade); // mouth/chin shadow
+  } else if(d===1){
+    P(5,5,6,2,p.skinShade); // back of head
+  } else if(d===2){
+    P(6,5,1,1,'#2a1a0e'); // eye
+  } else {
+    P(9,5,1,1,'#2a1a0e'); // eye
+  }
   // rifle (slung) for side dirs
   if(d===3){ P(12,7,1,9,p.rifle); P(12,6,1,1,p.rifleTip); }
   if(d===2){ P(3,7,1,9,p.rifle); P(3,6,1,1,p.rifleTip); }
 }
 
 const RED_PAL={
-  cap:'#5e6b4a', capDark:'#454f37', star:'#cf3a2c', skin:'#caa074', skinShade:'#a8825a',
-  coat:'#6b7656', coatDark:'#525d40', belt:'#3d2f1f', leg:'#525d40', legShade:'#3f4831',
-  boot:'#241f18', rifle:'#3a2c1c', rifleTip:'#888'
+  cap:'#484e55', capDark:'#282d32', star:'#dc2828', starHigh:'#ff6464',
+  skin:'#d2aa82', skinShade:'#a8825a', skinBlush:'#c89070',
+  coat:'#484e55', coatDark:'#282d32', coatHigh:'#646e78',
+  belt:'#3d2f1f', leg:'#484e55', legShade:'#282d32',
+  boot:'#241f18', rifle:'#3a2c1c', rifleTip:'#888',
+  patch:'#3a5040', wristCloth:'#c0392b'
 };
 const ENEMY_PAL={
   cap:'#5a4a32', capDark:'#41331f', star:'#7a6a48', skin:'#bb9468', skinShade:'#967254',
@@ -1023,6 +1283,11 @@ const Audio_={
   sfxHit(){ if(!this.ctx)return; const t=this.ctx.currentTime; this.tone(330,t,0.1,'square',0.2,this.master,{a:0.001,d:0.05}); this.tone(160,t,0.12,'sawtooth',0.12,this.master,{a:0.001,d:0.06}); },
   sfxHurt(){ if(!this.ctx)return; const t=this.ctx.currentTime; const o=this.ctx.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(300,t); o.frequency.exponentialRampToValueAtTime(80,t+0.25); const g=this.ctx.createGain(); g.gain.setValueAtTime(0.25,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.3); o.connect(g); g.connect(this.master); o.start(t); o.stop(t+0.32); },
   sfxPickup(){ if(!this.ctx)return; const t=this.ctx.currentTime; this.tone(660,t,0.1,'triangle',0.2,this.master,{a:0.001,d:0.05}); this.tone(990,t+0.06,0.12,'triangle',0.18,this.master,{a:0.001,d:0.06}); },
+  sfxFirstPickup(){ if(!this.ctx)return; const t=this.ctx.currentTime;
+    // 军号短句 "哒滴哒" — ascending fanfare ~1 second
+    [523,659,784].forEach((f,i)=>this.tone(f,t+i*0.12,0.45,'square',0.20,this.master,{a:0.01,d:0.28,filter:2400}));
+    this.tone(1047,t+0.38,0.5,'triangle',0.16,this.master,{a:0.02,d:0.38,vib:5,vibAmt:3});
+  },
   sfxWaypoint(){ if(!this.ctx)return; const t=this.ctx.currentTime; [523,659,784].forEach((f,i)=>this.tone(f,t+i*0.08,0.4,'sine',0.16,this.master,{a:0.01,d:0.25,vib:5})); },
   sfxAchieve(){ if(!this.ctx)return; const t=this.ctx.currentTime; [523,659,784,1046].forEach((f,i)=>this.tone(f,t+i*0.1,0.5,'triangle',0.18,this.master,{a:0.01,d:0.3})); },
   sfxFire(){ if(!this.ctx)return; const t=this.ctx.currentTime; this.tone(180,t,0.4,'sawtooth',0.12,this.master,{a:0.05,d:0.25,filter:600}); },
@@ -1303,28 +1568,72 @@ function makeEnemy(x,y){
     wx:0,wy:0, hurt:0, death:0};
 }
 const ITEMDEF={
-  it_veg:{name:'野菜',surv:5,hp:5},
-  it_root:{name:'草根',surv:3,hp:2},
-  it_water:{name:'净水',survSaveSec:8},
-  it_belt:{name:'半截皮带',surv:20,hp:0,story:true},
-  it_cane:{name:'木质拐杖',cane:true},
-  it_barley:{name:'青稞袋',surv:100,hp:100},
-  it_ammo:{name:'弹药',ammo:30},
-  it_chili:{name:'辣椒',surv:30,warm:6},
-  it_wood:{name:'干柴',fuel:true},
-  it_wool:{name:'羊毛衣',survSlow:true,surv:20},
-  it_flint:{name:'打火石',fuel:true},
-  it_liquor:{name:'烈酒',surv:50,warm:5},
-  it_bandage:{name:'绷带',hp:25},
-  it_grain:{name:'炒面',surv:15,hp:5},
-  it_canteen:{name:'水壶',survSaveSec:10},
-  it_rope:{name:'夺桥铁索',surv:60,hp:30},
-  it_torchwood:{name:'火把',fuel:true,warm:4,surv:10},
-  it_salt:{name:'盐巴',surv:25},
-  it_map:{name:'缴获地图',surv:50,hp:20},
-  it_flag_red:{name:'染血军旗',surv:80,hp:50},
-  it_medal:{name:'会师纪念章',surv:100,hp:100},
-  it_strawshoe:{name:'草鞋',surv:18},
+  it_veg:{name:'野菜',surv:5,hp:5,
+    desc:'草地上的绿色植物，苦涩但能充饥。恢复5点生命和5点饥饿。',
+    quote:'政委说，只要是绿的，就能吃。'},
+  it_root:{name:'草根',surv:3,hp:2,
+    desc:'从泥地里刨出的根茎，嚼起来土腥味重。恢复3点生命和3点饥饿。',
+    quote:'草根也是命根。'},
+  it_water:{name:'净水',survSaveSec:8,
+    desc:'竹筒装的干净水，减少饥饿消耗，持续数秒。',
+    quote:'水比金子还贵。'},
+  it_belt:{name:'半截皮带',surv:20,hp:0,story:true,
+    desc:'战友留下的遗物，焦黑断裂。食用后恢复20点饥饿，但触发悲痛旁白。',
+    quote:'这是李德胜的……我吃不下。'},
+  it_cane:{name:'木质拐杖',cane:true,
+    desc:'粗树枝削成，支撑疲惫的身体。永久提升移动速度15%。',
+    quote:'有了它，我还能走。'},
+  it_barley:{name:'青稞袋',surv:100,hp:100,rare:true,
+    desc:'蓝色粗布袋，装满了珍贵的青稞。恢复全部生命和饥饿（稀有）。',
+    quote:'老天爷赏的，分给同志们。'},
+  it_ammo:{name:'弹药',ammo:30,
+    desc:'牛皮纸包，装有若干子弹。补充弹药，维持战斗力。',
+    quote:'多一发子弹，多消灭一个敌人。'},
+  it_chili:{name:'辣椒',surv:30,warm:6,
+    desc:'红色干辣椒，咬一口全身发热。恢复体温，免疫寒冷一段时间。',
+    quote:'辣得冒汗，正好抗寒。'},
+  it_wood:{name:'干柴',fuel:true,
+    desc:'一捆干燥的木柴，可点燃临时篝火，带来温暖。',
+    quote:'火是雪山上的第二条命。'},
+  it_wool:{name:'羊毛衣',survSlow:true,surv:20,
+    desc:'粗针织的羊毛衣，比单衣暖和多了。被动：寒冷伤害减半，体温下降速度减半。',
+    quote:'老乡偷偷塞给我的。'},
+  it_flint:{name:'打火石',fuel:true,
+    desc:'黑色石块，敲击能打出火星。用于点燃篝火，抵御严寒。',
+    quote:'别弄丢了，全连就这一块。'},
+  it_liquor:{name:'烈酒',surv:50,warm:5,
+    desc:'玻璃瓶装的高度酒，喝下去从喉咙烧到胃。恢复体温，让人暂时忘却寒冷。',
+    quote:'喝一口，忘了冷。'},
+  it_bandage:{name:'急救绷带',hp:25,
+    desc:'白色绷带，带红十字。简单包扎，恢复生命值。',
+    quote:'缠上，血止住了。'},
+  it_grain:{name:'炒面',surv:15,hp:5,
+    desc:'灰色硬饼，啃一口硌牙。填饱肚子，恢复体力。',
+    quote:'硬得像石头，泡水才能咽。'},
+  it_canteen:{name:'水壶',survSaveSec:10,
+    desc:'军绿色水壶，有凹痕和锈迹。使用后减缓资源消耗，持续一段时间。',
+    quote:'省着喝，别浪费。'},
+  it_rope:{name:'夺桥铁索',surv:60,hp:30,
+    desc:'结实的绳索，用于攀爬和突破险关。大幅恢复斗志和体力。',
+    quote:'苗族兄弟教我们打绳结。'},
+  it_torchwood:{name:'火把',fuel:true,warm:4,surv:10,
+    desc:'木棍裹布的火把，点燃后驱散黑暗与寒冷，带来温暖。',
+    quote:'一点星火，可以燎原。'},
+  it_salt:{name:'盐巴',surv:25,
+    desc:'珍贵的食盐，红军长征途中极度匮乏。补充体力，维持战斗力。',
+    quote:'没有盐，人走不动路。'},
+  it_map:{name:'缴获地图',surv:50,hp:20,
+    desc:'羊皮纸地图，标注了隐藏小路和地形要道。心中有数，不会迷路。',
+    quote:'有了它，不会迷路。'},
+  it_flag_red:{name:'染血军旗',surv:80,hp:50,
+    desc:'残破的红旗，浸透了战士的鲜血。看见它，斗志倍增。',
+    quote:'旗在，阵地在。'},
+  it_medal:{name:'会师纪念章',surv:100,hp:100,rare:true,
+    desc:'三军会师的历史见证，沉甸甸地挂在胸前。这是长征胜利的勋章。',
+    quote:'走完了长征，这枚章值得。'},
+  it_strawshoe:{name:'草鞋',surv:18,
+    desc:'稻草编织的草鞋，脚趾常露出来。穿上它，长征的路还能走下去。',
+    quote:'草鞋没样，边打边量。'},
 };
 function makeItem(key,x,y){ return {key,x,y,bob:Math.random()*6.28,picked:false,hidden:false}; }
 
@@ -1388,7 +1697,7 @@ function toggleMute(){
   toast(Audio_.muted?'已静音':'已开启声音');
 }
 function winLevel(){
-  game.state='win'; Audio_.sfxAchieve(); Audio_.stopMusic();if(window.parent !== window) window.parent.postMessage('gameA_complete','*');
+  game.state='win'; Audio_.sfxAchieve(); Audio_.stopMusic();
   document.body.classList.remove('playing');
   document.getElementById('hud').classList.add('hidden');
   const w=document.getElementById('win'); w.classList.remove('hidden');
@@ -1722,6 +2031,7 @@ function hurtPlayer(dmg){
 function pickup(it){
   it.picked=true; const def=ITEMDEF[it.key]; const p=game.player;
   if(!def){return;}
+  const isFirst = !hasPickedFirst(it.key);
   let parts=[];
   if(it.hidden){
     game.gotHidden=true; Audio_.sfxAchieve();
@@ -1729,9 +2039,14 @@ function pickup(it){
     if(def.surv)p.surv=Math.min(p.maxsurv,p.surv+def.surv);
     if(def.hp)p.hp=Math.min(p.maxhp,p.hp+def.hp);
     spawnParticles(it.x,it.y,'#e0b04a',14);
+    if(isFirst){ setPickedFirst(it.key); showFirstPickupPopup(it,def); }
     return;
   }
-  Audio_.sfxPickup();
+  if(isFirst) setPickedFirst(it.key);
+  // 音效：初次拾取用更洪亮的军号音效，普通拾取用短促"叮"声
+  if(isFirst) Audio_.sfxFirstPickup();
+  else Audio_.sfxPickup();
+  // 应用物品效果
   if(def.ammo){ p.ammo=Math.min(p.maxammo,p.ammo+def.ammo); if(p.reload>0&&p.ammo>0)p.reload=0; parts.push('+'+def.ammo+'发'); }
   if(def.surv){ p.surv=Math.min(p.maxsurv,p.surv+def.surv); parts.push((game.level.survival.name)+'+'+def.surv); }
   if(def.hp){ p.hp=Math.min(p.maxhp,p.hp+def.hp); parts.push('体力+'+def.hp); }
@@ -1739,13 +2054,24 @@ function pickup(it){
   if(def.cane && !p.hasCane){ p.hasCane=true; p.speed=p.baseSpeed*1.15; p.baseSpeed=p.speed; parts.push('移速+15%'); }
   if(def.survSaveSec){ p.waterBuff=def.survSaveSec; parts.push('消耗-30%'); }
   if(def.survSlow){ p.survSlowBuff=true; parts.push('消耗减半'); }
-  if(def.fuel){ // light nearest unlit/refuel fire OR grant temp warmth
-    p.warmBuff=Math.max(p.warmBuff,5); parts.push('取暖'); Audio_.sfxFire();
-  }
+  if(def.fuel){ p.warmBuff=Math.max(p.warmBuff,5); parts.push('取暖'); Audio_.sfxFire(); }
   if(def.story){ showBanner('煮皮带充饥', '红军战士的坚韧'); }
-  spawnParticles(it.x,it.y,'#cfe89a',5);
-  toast(parts.join(' · ')||'拾取', def.name);
-  game.floaters.push({x:it.x,y:it.y-10,txt:def.surv?('+'+def.surv):(def.hp?('+'+def.hp):(def.ammo?('+'+def.ammo):'')),col:'#bfe089',life:0.8});
+  // 粒子特效：初次拾取光柱更粗更高(40px宽,50px高)；普通拾取小光柱(20px)
+  if(isFirst){
+    spawnFirstPickupParticles(it.x,it.y,'#cfe89a');
+    // 稀有物品额外屏幕震动
+    if(def.rare) shake(0.2,3);
+  } else {
+    spawnParticles(it.x,it.y,'#cfe89a',5);
+  }
+  // 飘字提示：普通拾取显示简单飘字
+  game.floaters.push({x:it.x,y:it.y-10,
+    txt:def.surv?('+'+def.surv):(def.hp?('+'+def.hp):(def.ammo?('+'+def.ammo):'')),
+    col:isFirst?'#e0b04a':'#bfe089',life:0.8});
+  // 普通拾取显示toast；初次拾取显示弹窗（弹窗自带内容，不额外toast）
+  if(!isFirst) toast(parts.join(' · ')||'拾取', def.name);
+  // 首次获得弹窗（游戏暂停，模态）
+  if(isFirst) showFirstPickupPopup(it,def);
 }
 function spawnParticles(x,y,col,n){
   for(let i=0;i<n;i++){const a=rand(0,6.28),s=rand(10,40);
@@ -1844,7 +2170,13 @@ function render(){
   // particles
   for(const pa of game.particles){
     ctx.globalAlpha=clamp(pa.life*2,0,1); ctx.fillStyle=pa.col;
-    ctx.fillRect(Math.floor(pa.x-camx),Math.floor(pa.y-camy),pa.sz,pa.sz);
+    if(pa.isStar){
+      // 星形粒子：十字形（初次拾取顶部闪烁星星）
+      const px=Math.floor(pa.x-camx), py=Math.floor(pa.y-camy);
+      ctx.fillRect(px-1,py,3,1); ctx.fillRect(px,py-1,1,3);
+    } else {
+      ctx.fillRect(Math.floor(pa.x-camx),Math.floor(pa.y-camy),pa.sz,pa.sz);
+    }
   }
   ctx.globalAlpha=1;
 
@@ -2208,6 +2540,7 @@ function frame(now){
   dt=Math.min(dt,0.05); // clamp
   if(game.state==='play'){ update(dt); render(); }
   else if(game.state==='pause'){ render(); } // freeze frame visible
+  else if(game.state==='popup'){ render(); } // freeze frame under popup
   requestAnimationFrame(frame);
 }
 
@@ -2242,9 +2575,137 @@ document.getElementById('loseMenuBtn').addEventListener('click',backToMenu);
 document.getElementById('winMenuBtn').addEventListener('click',backToMenu);
 document.getElementById('nextBtn').addEventListener('click',()=>{ if(LEVELS[game.levelIdx+1]&&LEVELS[game.levelIdx+1].play) startLevel(game.levelIdx+1); });
 
+// 首次拾取弹窗：点击任意处收下
+document.getElementById('pickupPopupOverlay').addEventListener('click', closePickupPopup);
+document.getElementById('pickupPopupOverlay').addEventListener('touchend', e=>{ e.preventDefault(); closePickupPopup(); });
+
+// 战地手册按钮
+document.getElementById('fieldManualBtn').addEventListener('click',()=>{ Audio_.init(); showFieldManual(); });
+document.getElementById('fmCloseBtn').addEventListener('click', hideFieldManual);
+
 /* =====================================================================
    INIT
    ===================================================================== */
+
+/* ---- 首次拾取记录（localStorage）---- */
+function fpKey(id){ return 'fp_'+id; }
+function hasPickedFirst(id){ try{ return !!localStorage.getItem(fpKey(id)); }catch(e){ return false; } }
+function setPickedFirst(id){ try{ localStorage.setItem(fpKey(id),'1'); }catch(e){} }
+function getPickedCount(){ return Object.keys(ITEMDEF).filter(id=>hasPickedFirst(id)).length; }
+
+/* ---- 首次拾取增强粒子特效 ---- */
+// 光柱更粗(40px)、升高到50px、顶部星星、持续1.5秒
+function spawnFirstPickupParticles(x,y,col){
+  for(let i=0;i<16;i++){
+    const a=rand(0,6.28), s=rand(18,55);
+    game.particles.push({x,y,vx:Math.cos(a)*s*0.4,vy:Math.sin(a)*s-35,g:38,life:rand(0.9,1.5),col,sz:rand(1,3)});
+  }
+  // 顶部闪烁星星（金色）
+  for(let i=0;i<6;i++){
+    game.particles.push({x:x+rand(-10,10),y,vx:rand(-4,4),vy:rand(-55,-35),g:18,life:rand(1.1,1.5),col:'#e0b04a',sz:2,isStar:true});
+  }
+}
+
+/* ---- 首次拾取弹窗 ---- */
+let _pickupPopupState=null; // stores game state before popup
+function showFirstPickupPopup(it,def){
+  // 暂停游戏（弹窗期间游戏时间暂停）
+  _pickupPopupState = game.state;
+  game.state='popup';
+  const overlay=document.getElementById('pickupPopupOverlay');
+  const box=document.getElementById('pickupBox');
+  // 填充内容
+  document.getElementById('popupItemName').textContent=def.name;
+  document.getElementById('popupItemDesc').textContent=def.desc||'';
+  const qEl=document.getElementById('popupItemQuote');
+  if(def.quote){ qEl.textContent=def.quote; qEl.style.display=''; }
+  else { qEl.style.display='none'; }
+  // 绘制物品大图（将14x14像素图放大到64x64）
+  const c=document.getElementById('pickupItemCanvas');
+  const g=c.getContext('2d'); g.imageSmoothingEnabled=false;
+  g.clearRect(0,0,14,14);
+  const img=sprites[it.key];
+  if(img) g.drawImage(img,0,0);
+  // 重置动画
+  box.classList.remove('closing');
+  void box.offsetWidth;
+  overlay.classList.remove('hidden');
+}
+function closePickupPopup(){
+  const overlay=document.getElementById('pickupPopupOverlay');
+  const box=document.getElementById('pickupBox');
+  if(overlay.classList.contains('hidden')) return;
+  box.classList.add('closing');
+  setTimeout(()=>{
+    overlay.classList.add('hidden');
+    box.classList.remove('closing');
+    game.state = (_pickupPopupState==='popup'?'play':(_pickupPopupState||'play'));
+    _pickupPopupState=null;
+  },260);
+}
+
+/* ---- 战地手册 ---- */
+function showFieldManual(){
+  const overlay=document.getElementById('fieldManual');
+  overlay.classList.remove('hidden');
+  const allIds=Object.keys(ITEMDEF);
+  const total=allIds.length;
+  const found=getPickedCount();
+  document.getElementById('fmProgressLabel').textContent=`已发现 ${found}/${total} 种物品`;
+  document.getElementById('fmProgressFill').style.width=`${Math.round(found/total*100)}%`;
+  const list=document.getElementById('fmItemList');
+  list.innerHTML='';
+  allIds.forEach(id=>{
+    const def=ITEMDEF[id];
+    const obtained=hasPickedFirst(id);
+    const el=document.createElement('div');
+    el.className='fm-list-item'+(obtained?' obtained':'')+(def.rare?' rare':'');
+    el.innerHTML=`<div class="fm-dot"></div>${def.name}`;
+    el.addEventListener('click',()=>{
+      document.querySelectorAll('.fm-list-item').forEach(x=>x.classList.remove('selected'));
+      el.classList.add('selected');
+      showFMDetail(id,def,obtained);
+    });
+    list.appendChild(el);
+  });
+  // 默认选中第一个已获得的物品，否则选第一个
+  const firstObtainedEl=list.querySelector('.obtained');
+  if(firstObtainedEl) firstObtainedEl.click();
+  else if(list.firstChild) list.firstChild.click();
+}
+function showFMDetail(id,def,obtained){
+  const detail=document.getElementById('fmDetail');
+  detail.innerHTML='';
+  // 标题行（图 + 名称 + 状态）
+  const hdr=document.createElement('div'); hdr.className='fm-detail-header';
+  const imgWrap=document.createElement('div'); imgWrap.className='fm-detail-img-wrap'+(def.rare?' rare':'');
+  const c=document.createElement('canvas'); c.width=14; c.height=14;
+  c.style.cssText='display:block;image-rendering:pixelated;image-rendering:crisp-edges;width:72px;height:72px;border:2px solid var(--line);border-radius:3px;background:rgba(255,255,255,.04);';
+  if(def.rare) c.style.border='2px solid var(--gold)';
+  const g=c.getContext('2d'); g.imageSmoothingEnabled=false;
+  const img=sprites[id];
+  if(img){ g.globalAlpha=obtained?1:0.22; g.drawImage(img,0,0); g.globalAlpha=1; }
+  imgWrap.appendChild(c); hdr.appendChild(imgWrap);
+  const info=document.createElement('div');
+  info.innerHTML=`<div class="fm-detail-title">${def.name}</div>`+
+    `<div class="fm-detail-meta">${def.rare?'★ 稀有物品':''}</div>`+
+    `<div class="fm-detail-status ${obtained?'found':'notfound'}">${obtained?'✓ 已获得':'? 未发现'}</div>`;
+  hdr.appendChild(info); detail.appendChild(hdr);
+  if(obtained && def.desc){
+    const p=document.createElement('p'); p.className='fm-desc'; p.textContent=def.desc; detail.appendChild(p);
+  }
+  if(obtained && def.quote){
+    const q=document.createElement('div'); q.className='fm-quote'; q.textContent=def.quote; detail.appendChild(q);
+  }
+  if(!obtained){
+    const u=document.createElement('p'); u.className='fm-desc'; u.style.color='var(--muted)';
+    u.textContent='尚未获得此物品。继续探索，也许会在某个隐蔽角落发现它。'; detail.appendChild(u);
+  }
+}
+function hideFieldManual(){
+  document.getElementById('fieldManual').classList.add('hidden');
+}
+
 function init(){
   SOLDIER_SHEET=buildSoldier(RED_PAL);
   ENEMY_SHEET=buildSoldier(ENEMY_PAL);
